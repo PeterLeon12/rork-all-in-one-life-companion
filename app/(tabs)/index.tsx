@@ -24,7 +24,7 @@ import { router } from 'expo-router';
 import { useCategories } from '@/contexts/CategoryContext';
 
 const { width } = Dimensions.get('window');
-const cardWidth = (width - 48) / 2;
+const cardWidth = (width - 60) / 2;
 
 interface CategoryCard {
   id: string;
@@ -206,7 +206,14 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.backgroundContainer}>
+      <LinearGradient
+        colors={['#F8F9FA', '#E9ECEF', '#F8F9FA']}
+        style={styles.backgroundGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -271,14 +278,22 @@ export default function HomeScreen() {
           </View>
         </View>
       </View>
-    </ScrollView>
+        </ScrollView>
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+  },
+  backgroundGradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',
@@ -377,11 +392,17 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     paddingHorizontal: 24,
     justifyContent: 'space-between',
+    gap: 12,
   },
   categoryCard: {
-    marginBottom: 16,
+    marginBottom: 4,
     borderRadius: 16,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   cardGradient: {
     height: 120,
