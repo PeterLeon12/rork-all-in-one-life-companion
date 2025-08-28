@@ -190,12 +190,20 @@ export default function ProfileScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <ScrollView 
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+    <View style={styles.backgroundContainer}>
+      <LinearGradient
+        colors={['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe']}
+        style={styles.backgroundGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
+        <View style={styles.backgroundOverlay}>
+          <View style={styles.container}>
+            <ScrollView 
+              style={styles.scrollView}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+            >
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <LinearGradient
@@ -233,15 +241,28 @@ export default function ProfileScreen() {
         <View style={styles.versionContainer}>
           <Text style={styles.versionText}>Life Mastery v1.0.0</Text>
         </View>
-      </ScrollView>
+            </ScrollView>
+          </View>
+        </View>
+      </LinearGradient>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+  },
+  backgroundGradient: {
+    flex: 1,
+  },
+  backgroundOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: 'transparent',
   },
   scrollView: {
     flex: 1,
@@ -347,14 +368,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   sectionContent: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   menuItem: {
     flexDirection: 'row',

@@ -186,7 +186,15 @@ export default function WealthScreen() {
         }} 
       />
       
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.backgroundContainer}>
+        <LinearGradient
+          colors={['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe']}
+          style={styles.backgroundGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.backgroundOverlay}>
+            <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header Stats */}
         <View style={styles.headerCard}>
           <LinearGradient
@@ -250,14 +258,14 @@ export default function WealthScreen() {
 
         {/* Monthly Insights */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Month's Insights</Text>
+          <Text style={styles.sectionTitle}>This Month&apos;s Insights</Text>
           <View style={styles.insightCard}>
             <View style={styles.insightHeader}>
               <TrendingUp size={24} color="#4ECDC4" />
               <Text style={styles.insightTitle}>Spending Analysis</Text>
             </View>
             <Text style={styles.insightText}>
-              You've saved 18% more than last month! Your biggest expense category was dining out at $340.
+              You&apos;ve saved 18% more than last month! Your biggest expense category was dining out at $340.
             </Text>
             <View style={styles.insightStats}>
               <View style={styles.insightStat}>
@@ -275,15 +283,28 @@ export default function WealthScreen() {
             </View>
           </View>
         </View>
-      </ScrollView>
+            </ScrollView>
+          </View>
+        </LinearGradient>
+      </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+  },
+  backgroundGradient: {
+    flex: 1,
+  },
+  backgroundOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: 'transparent',
   },
   headerCard: {
     margin: 24,

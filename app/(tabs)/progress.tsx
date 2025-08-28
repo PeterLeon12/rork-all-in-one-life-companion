@@ -140,17 +140,25 @@ export default function ProgressScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Your Progress</Text>
-        <Text style={styles.subtitle}>Track your growth across all life areas</Text>
-      </View>
-
-      <ScrollView 
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+    <View style={styles.backgroundContainer}>
+      <LinearGradient
+        colors={['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe']}
+        style={styles.backgroundGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
+        <View style={styles.backgroundOverlay}>
+          <View style={styles.container}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Your Progress</Text>
+              <Text style={styles.subtitle}>Track your growth across all life areas</Text>
+            </View>
+
+            <ScrollView 
+              style={styles.scrollView}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+            >
         {/* Overall Stats */}
         <View style={styles.overallStatsCard}>
           <LinearGradient
@@ -215,15 +223,28 @@ export default function ProgressScreen() {
             </View>
           </View>
         </View>
-      </ScrollView>
+            </ScrollView>
+          </View>
+        </View>
+      </LinearGradient>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+  },
+  backgroundGradient: {
+    flex: 1,
+  },
+  backgroundOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: 'transparent',
   },
   header: {
     paddingHorizontal: 24,
@@ -293,15 +314,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   progressCard: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   progressHeader: {
     flexDirection: 'row',
@@ -362,17 +385,19 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   achievementCard: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   achievementIcon: {
     width: 48,
@@ -397,14 +422,16 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   summaryCard: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   summaryRow: {
     flexDirection: 'row',

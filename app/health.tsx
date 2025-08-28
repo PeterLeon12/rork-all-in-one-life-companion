@@ -260,7 +260,15 @@ export default function HealthScreen() {
         }} 
       />
       
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.backgroundContainer}>
+        <LinearGradient
+          colors={['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe']}
+          style={styles.backgroundGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.backgroundOverlay}>
+            <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header Stats */}
         <View style={styles.headerCard}>
           <LinearGradient
@@ -341,15 +349,28 @@ export default function HealthScreen() {
             </View>
           </View>
         </View>
-      </ScrollView>
+            </ScrollView>
+          </View>
+        </LinearGradient>
+      </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+  },
+  backgroundGradient: {
+    flex: 1,
+  },
+  backgroundOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: 'transparent',
   },
   headerCard: {
     margin: 24,
@@ -412,16 +433,18 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   metricCard: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     marginHorizontal: 24,
     marginBottom: 12,
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   metricHeader: {
     flexDirection: 'row',
@@ -510,16 +533,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   programCard: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     marginHorizontal: 24,
     marginBottom: 16,
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   programHeader: {
     flexDirection: 'row',
@@ -555,15 +580,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   insightCard: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     marginHorizontal: 24,
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   insightHeader: {
     flexDirection: 'row',
