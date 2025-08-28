@@ -24,7 +24,7 @@ import { router } from 'expo-router';
 import { useCategories } from '@/contexts/CategoryContext';
 
 const { width } = Dimensions.get('window');
-const cardWidth = (width - 60) / 2;
+const cardWidth = (width - 64) / 2;
 
 interface CategoryCard {
   id: string;
@@ -403,7 +403,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     paddingHorizontal: 24,
     justifyContent: 'space-between',
-    gap: 16,
   },
   categoryCard: {
     marginBottom: 16,
