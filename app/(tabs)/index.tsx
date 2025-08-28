@@ -208,11 +208,12 @@ export default function HomeScreen() {
   return (
     <View style={styles.backgroundContainer}>
       <LinearGradient
-        colors={['#F8F9FA', '#E9ECEF', '#F8F9FA']}
+        colors={['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe']}
         style={styles.backgroundGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
+        <View style={styles.backgroundOverlay}>
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
@@ -279,6 +280,7 @@ export default function HomeScreen() {
         </View>
       </View>
         </ScrollView>
+        </View>
       </LinearGradient>
     </View>
   );
@@ -290,6 +292,10 @@ const styles = StyleSheet.create({
   },
   backgroundGradient: {
     flex: 1,
+  },
+  backgroundOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
   },
   container: {
     flex: 1,
@@ -332,8 +338,13 @@ const styles = StyleSheet.create({
   insightCard: {
     marginHorizontal: 24,
     marginBottom: 32,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
   },
   insightGradient: {
     padding: 20,
@@ -392,17 +403,17 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     paddingHorizontal: 24,
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 16,
   },
   categoryCard: {
-    marginBottom: 4,
-    borderRadius: 16,
+    marginBottom: 16,
+    borderRadius: 20,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
   },
   cardGradient: {
     height: 120,
@@ -425,17 +436,19 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   progressCard: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     marginHorizontal: 24,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   progressItem: {
     flex: 1,
