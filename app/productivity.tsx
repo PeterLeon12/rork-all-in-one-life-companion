@@ -12,9 +12,7 @@ import {
   Pause,
   RotateCcw,
   TrendingUp,
-  Zap,
-  Award,
-  Timer
+  Award
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -82,31 +80,32 @@ const focusSessions = [
 export default function ProductivityScreen() {
   const [pomodoroTime, setPomodoroTime] = React.useState(25 * 60); // 25 minutes in seconds
   const [isRunning, setIsRunning] = React.useState(false);
+  const [goals, setGoals] = React.useState(todayGoals);
+  const [dailyHabits, setDailyHabits] = React.useState(habits);
 
   // Timer effect
   React.useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     
     if (isRunning && pomodoroTime > 0) {
+      console.log('Starting timer, current time:', pomodoroTime);
       interval = setInterval(() => {
         setPomodoroTime(time => {
+          console.log('Timer tick, current time:', time);
           if (time <= 1) {
             setIsRunning(false);
-            // Timer completed - could add notification here
             console.log('Pomodoro session completed!');
             return 0;
           }
           return time - 1;
         });
       }, 1000);
-    } else if (!isRunning && interval) {
-      clearInterval(interval);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning, pomodoroTime]);
+  }, [isRunning]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -131,6 +130,14 @@ export default function ProductivityScreen() {
     );
   };
 
+  const toggleGoal = (goalId: number) => {
+    setGoals(prevGoals => 
+      prevGoals.map(goal => 
+        goal.id === goalId ? { ...goal, completed: !goal.completed } : goal
+      )
+    );
+  };
+
   const renderGoal = (goal: any, index: number) => {
     const getPriorityColor = (priority: string) => {
       switch (priority) {
@@ -145,7 +152,10 @@ export default function ProductivityScreen() {
     
     return (
       <View key={index} style={[styles.goalCard, goal.completed && styles.completedGoal]}>
-        <TouchableOpacity style={styles.goalCheckbox}>
+        <TouchableOpacity 
+          style={styles.goalCheckbox}
+          onPress={() => toggleGoal(goal.id)}
+        >
           {goal.completed ? (
             <CheckCircle size={24} color="#27AE60" />
           ) : (
@@ -171,6 +181,14 @@ export default function ProductivityScreen() {
     );
   };
 
+  const toggleHabit = (habitIndex: number) => {
+    setDailyHabits(prevHabits => 
+      prevHabits.map((habit, index) => 
+        index === habitIndex ? { ...habit, completed: !habit.completed } : habit
+      )
+    );
+  };
+
   const renderHabit = (habit: any, index: number) => {
     return (
       <View key={index} style={styles.habitCard}>
@@ -179,10 +197,13 @@ export default function ProductivityScreen() {
           <Text style={styles.habitName}>{habit.name}</Text>
           <Text style={styles.habitStreak}>{habit.streak} day streak</Text>
         </View>
-        <TouchableOpacity style={[
-          styles.habitCheckbox,
-          { backgroundColor: habit.completed ? '#27AE60' : '#E9ECEF' }
-        ]}>
+        <TouchableOpacity 
+          style={[
+            styles.habitCheckbox,
+            { backgroundColor: habit.completed ? '#27AE60' : '#E9ECEF' }
+          ]}
+          onPress={() => toggleHabit(index)}
+        >
           {habit.completed && <CheckCircle size={20} color="white" />}
         </TouchableOpacity>
       </View>
@@ -243,7 +264,7 @@ export default function ProductivityScreen() {
               <Target size={32} color="white" />
               <Text style={styles.headerTitle}>Productivity Score</Text>
               <Text style={styles.headerScore}>85/100</Text>
-              <Text style={styles.headerSubtitle}>You're crushing your goals!</Text>
+              <Text style={styles.headerSubtitle}>You&apos;re crushing your goals!</Text>
             </View>
           </LinearGradient>
         </View>
@@ -282,7 +303,7 @@ export default function ProductivityScreen() {
 
         {/* Productivity Metrics */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's Overview</Text>
+          <Text style={styles.sectionTitle}>Today&apos;s Overview</Text>
           <View style={styles.metricsGrid}>
             {productivityMetrics.map(renderMetricCard)}
           </View>
@@ -291,18 +312,18 @@ export default function ProductivityScreen() {
         {/* Today's Goals */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Today's Goals</Text>
+            <Text style={styles.sectionTitle}>Today&apos;s Goals</Text>
             <TouchableOpacity style={styles.addButton}>
               <Plus size={20} color="#667eea" />
             </TouchableOpacity>
           </View>
-          {todayGoals.map(renderGoal)}
+          {goals.map(renderGoal)}
         </View>
 
         {/* Habits Tracker */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Daily Habits</Text>
-          {habits.map(renderHabit)}
+          {dailyHabits.map(renderHabit)}
         </View>
 
         {/* Focus Sessions */}
@@ -315,7 +336,7 @@ export default function ProductivityScreen() {
 
         {/* Weekly Insights */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week's Progress</Text>
+          <Text style={styles.sectionTitle}>This Week&apos;s Progress</Text>
           <View style={styles.insightCard}>
             <View style={styles.insightHeader}>
               <Award size={24} color="#FD79A8" />
