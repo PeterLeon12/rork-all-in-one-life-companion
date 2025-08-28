@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Award
 } from 'lucide-react-native';
+import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
 
 const { width } = Dimensions.get('window');
 
@@ -78,6 +79,9 @@ const focusSessions = [
 ];
 
 export default function ProductivityScreen() {
+  const { addActivity } = useCategories();
+  const { score: productivityScore, weeklyImprovement, allScores } = useCategoryData('productivity');
+  
   const [pomodoroTime, setPomodoroTime] = React.useState(25 * 60); // 25 minutes in seconds
   const [isRunning, setIsRunning] = React.useState(false);
   const [goals, setGoals] = React.useState(todayGoals);
@@ -85,7 +89,7 @@ export default function ProductivityScreen() {
 
   // Timer effect
   React.useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
     
     if (isRunning && pomodoroTime > 0) {
       console.log('Starting timer, current time:', pomodoroTime);
@@ -95,6 +99,12 @@ export default function ProductivityScreen() {
           if (time <= 1) {
             setIsRunning(false);
             console.log('Pomodoro session completed!');
+            // Add activity when pomodoro session completes
+            addActivity({
+              ...createActivityImpact.productivityTask(),
+              categoryId: 'productivity',
+              title: 'Completed Pomodoro Session'
+            });
             return 0;
           }
           return time - 1;
@@ -105,7 +115,7 @@ export default function ProductivityScreen() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning]);
+  }, [isRunning, pomodoroTime, addActivity]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -132,9 +142,17 @@ export default function ProductivityScreen() {
 
   const toggleGoal = (goalId: number) => {
     setGoals(prevGoals => 
-      prevGoals.map(goal => 
-        goal.id === goalId ? { ...goal, completed: !goal.completed } : goal
-      )
+      prevGoals.map(goal => {
+        if (goal.id === goalId && !goal.completed) {
+          // Add activity when completing a goal
+          addActivity({
+            ...createActivityImpact.productivityTask(),
+            categoryId: 'productivity',
+            title: `Completed: ${goal.title}`
+          });
+        }
+        return goal.id === goalId ? { ...goal, completed: !goal.completed } : goal;
+      })
     );
   };
 
@@ -183,9 +201,28 @@ export default function ProductivityScreen() {
 
   const toggleHabit = (habitIndex: number) => {
     setDailyHabits(prevHabits => 
-      prevHabits.map((habit, index) => 
-        index === habitIndex ? { ...habit, completed: !habit.completed } : habit
-      )
+      prevHabits.map((habit, index) => {
+        if (index === habitIndex && !habit.completed) {
+          // Add activity when completing a habit
+          let activityData;
+          if (habit.name.includes('water')) {
+            activityData = createActivityImpact.healthActivity();
+          } else if (habit.name.includes('meditate')) {
+            activityData = createActivityImpact.meditation(10);
+          } else if (habit.name.includes('exercise')) {
+            activityData = createActivityImpact.exercise('light');
+          } else {
+            activityData = createActivityImpact.productivityTask();
+          }
+          
+          addActivity({
+            ...activityData,
+            categoryId: 'productivity',
+            title: `Habit: ${habit.name}`
+          });
+        }
+        return index === habitIndex ? { ...habit, completed: !habit.completed } : habit;
+      })
     );
   };
 
@@ -263,8 +300,10 @@ export default function ProductivityScreen() {
             <View style={styles.headerContent}>
               <Target size={32} color="white" />
               <Text style={styles.headerTitle}>Productivity Score</Text>
-              <Text style={styles.headerScore}>85/100</Text>
-              <Text style={styles.headerSubtitle}>You&apos;re crushing your goals!</Text>
+              <Text style={styles.headerScore}>{productivityScore}/100</Text>
+              <Text style={styles.headerSubtitle}>
+                {weeklyImprovement > 0 ? `+${weeklyImprovement} this week!` : "You're building great habits!"}
+              </Text>
             </View>
           </LinearGradient>
         </View>
@@ -343,20 +382,20 @@ export default function ProductivityScreen() {
               <Text style={styles.insightTitle}>Productivity Insights</Text>
             </View>
             <Text style={styles.insightText}>
-              Excellent week! You completed 89% of your goals and maintained a 12-day habit streak. Your focus sessions averaged 35 minutes.
+              Your productivity boosts other areas! Completing goals increases confidence (+{allScores.confidence}%) and wealth mindset (+{allScores.wealth}%).
             </Text>
             <View style={styles.insightStats}>
               <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>89%</Text>
-                <Text style={styles.insightStatLabel}>Goals Completed</Text>
+                <Text style={styles.insightStatValue}>{allScores.confidence}%</Text>
+                <Text style={styles.insightStatLabel}>Confidence</Text>
               </View>
               <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>35m</Text>
-                <Text style={styles.insightStatLabel}>Avg Focus Time</Text>
+                <Text style={styles.insightStatValue}>{allScores.wealth}%</Text>
+                <Text style={styles.insightStatLabel}>Wealth Mindset</Text>
               </View>
               <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>12</Text>
-                <Text style={styles.insightStatLabel}>Habit Streak</Text>
+                <Text style={styles.insightStatValue}>{Math.round((allScores.productivity + allScores.confidence + allScores.wealth) / 3)}%</Text>
+                <Text style={styles.insightStatLabel}>Growth Score</Text>
               </View>
             </View>
           </View>

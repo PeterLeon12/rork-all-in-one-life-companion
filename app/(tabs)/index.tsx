@@ -19,6 +19,7 @@ import {
   ShieldCheck
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useCategories } from '@/contexts/CategoryContext';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 48) / 2;
@@ -139,8 +140,13 @@ const quickActions = [
 ];
 
 export default function HomeScreen() {
+  const { getOverallScore, getCategoryProgress } = useCategories();
+  
+  const overallScore = getOverallScore();
+  
   const renderCategoryCard = (category: CategoryCard) => {
     const IconComponent = category.icon;
+    const categoryScore = getCategoryProgress(category.id);
     
     return (
       <TouchableOpacity
@@ -159,6 +165,9 @@ export default function HomeScreen() {
             <IconComponent size={32} color="white" />
             <Text style={styles.cardTitle}>{category.title}</Text>
             <Text style={styles.cardSubtitle}>{category.subtitle}</Text>
+            <View style={styles.scoreContainer}>
+              <Text style={styles.scoreText}>{categoryScore}%</Text>
+            </View>
           </View>
         </LinearGradient>
       </TouchableOpacity>
@@ -205,7 +214,7 @@ export default function HomeScreen() {
             <Sparkles size={24} color="white" />
             <Text style={styles.insightTitle}>Today's Insight</Text>
             <Text style={styles.insightText}>
-              Small daily improvements lead to stunning long-term results.
+              Your actions in one area boost others! Exercise improves health, energy, and confidence.
             </Text>
           </View>
         </LinearGradient>
@@ -233,14 +242,14 @@ export default function HomeScreen() {
         <View style={styles.progressCard}>
           <View style={styles.progressItem}>
             <TrendingUp size={20} color="#4ECDC4" />
-            <Text style={styles.progressLabel}>Overall Growth</Text>
-            <Text style={styles.progressValue}>+12%</Text>
+            <Text style={styles.progressLabel}>Overall Score</Text>
+            <Text style={styles.progressValue}>{overallScore}%</Text>
           </View>
           <View style={styles.progressDivider} />
           <View style={styles.progressItem}>
             <Target size={20} color="#FF6B6B" />
-            <Text style={styles.progressLabel}>Goals Completed</Text>
-            <Text style={styles.progressValue}>7/10</Text>
+            <Text style={styles.progressLabel}>Interconnected Growth</Text>
+            <Text style={styles.progressValue}>Active</Text>
           </View>
         </View>
       </View>
@@ -410,5 +419,19 @@ const styles = StyleSheet.create({
     height: 40,
     backgroundColor: '#E9ECEF',
     marginHorizontal: 20,
+  },
+  scoreContainer: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  scoreText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

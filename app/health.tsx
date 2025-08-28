@@ -16,6 +16,7 @@ import {
   Dumbbell,
   Target
 } from 'lucide-react-native';
+import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
 
 const { width } = Dimensions.get('window');
 
@@ -77,6 +78,53 @@ const healthPrograms = [
 ];
 
 export default function HealthScreen() {
+  const { addActivity } = useCategories();
+  const { score: healthScore, weeklyImprovement, allScores } = useCategoryData('health');
+  
+  const handleQuickAction = (actionType: string, title: string) => {
+    let activityData;
+    
+    switch (actionType) {
+      case 'workout':
+        activityData = {
+          ...createActivityImpact.exercise('moderate'),
+          categoryId: 'health',
+          title: title
+        };
+        break;
+      case 'meditate':
+        activityData = {
+          ...createActivityImpact.meditation(15),
+          categoryId: 'health',
+          title: title
+        };
+        break;
+      case 'mood':
+        activityData = {
+          ...createActivityImpact.healthActivity(),
+          categoryId: 'health',
+          title: title
+        };
+        break;
+      case 'break-free':
+        activityData = {
+          ...createActivityImpact.breakBadHabit(),
+          categoryId: 'health',
+          title: title
+        };
+        break;
+      default:
+        activityData = {
+          type: 'health',
+          categoryId: 'health',
+          title: title,
+          impact: { health: 2 }
+        };
+    }
+    
+    addActivity(activityData);
+  };
+  
   const renderMetricCard = (metric: any, index: number) => {
     const IconComponent = metric.icon;
     const progressWidth = (width - 72) * (metric.progress / 100);
@@ -117,7 +165,20 @@ export default function HealthScreen() {
         key={index} 
         style={styles.quickActionCard} 
         activeOpacity={0.8}
-        onPress={() => action.route ? router.push(action.route) : null}
+        onPress={() => {
+          if (action.route) {
+            router.push(action.route);
+          } else {
+            // Handle quick actions with activity tracking
+            let actionType = 'health';
+            if (action.title.includes('Workout')) actionType = 'workout';
+            else if (action.title.includes('Meditate')) actionType = 'meditate';
+            else if (action.title.includes('Mood')) actionType = 'mood';
+            else if (action.title.includes('Break Free')) actionType = 'break-free';
+            
+            handleQuickAction(actionType, action.title);
+          }
+        }}
       >
         <LinearGradient
           colors={[action.color, action.color + 'CC']}
@@ -211,8 +272,10 @@ export default function HealthScreen() {
             <View style={styles.headerContent}>
               <Heart size={32} color="white" />
               <Text style={styles.headerTitle}>Your Health Score</Text>
-              <Text style={styles.headerScore}>82/100</Text>
-              <Text style={styles.headerSubtitle}>Great progress! Keep it up</Text>
+              <Text style={styles.headerScore}>{healthScore}/100</Text>
+              <Text style={styles.headerSubtitle}>
+                {weeklyImprovement > 0 ? `+${weeklyImprovement} this week!` : 'Keep building healthy habits!'}
+              </Text>
               
               <TouchableOpacity 
                 style={styles.aiChatButton}
@@ -260,20 +323,20 @@ export default function HealthScreen() {
               <Text style={styles.insightTitle}>Improvement Trend</Text>
             </View>
             <Text style={styles.insightText}>
-              Your sleep quality improved by 15% this week. Your consistent bedtime routine is paying off!
+              Your health activities are boosting other areas! Exercise improves fitness (+{allScores.fitness}%), energy (+{allScores.energy}%), and confidence (+{allScores.confidence}%).
             </Text>
             <View style={styles.insightStats}>
               <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>+15%</Text>
-                <Text style={styles.insightStatLabel}>Sleep Quality</Text>
+                <Text style={styles.insightStatValue}>{allScores.fitness}%</Text>
+                <Text style={styles.insightStatLabel}>Fitness Boost</Text>
               </View>
               <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>5/7</Text>
-                <Text style={styles.insightStatLabel}>Workout Days</Text>
+                <Text style={styles.insightStatValue}>{allScores.energy}%</Text>
+                <Text style={styles.insightStatLabel}>Energy Level</Text>
               </View>
               <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>92%</Text>
-                <Text style={styles.insightStatLabel}>Goal Achievement</Text>
+                <Text style={styles.insightStatValue}>{allScores.confidence}%</Text>
+                <Text style={styles.insightStatLabel}>Confidence</Text>
               </View>
             </View>
           </View>
