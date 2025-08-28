@@ -16,7 +16,9 @@ import {
   Zap,
   Coffee,
   Dumbbell,
-  ShieldCheck
+  ShieldCheck,
+  MapPin,
+  HandHeart
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useCategories } from '@/contexts/CategoryContext';
@@ -53,7 +55,7 @@ const categories: CategoryCard[] = [
   {
     id: 'wealth',
     title: 'Wealth',
-    subtitle: 'Financial Growth',
+    subtitle: 'Career & Finance',
     icon: DollarSign,
     gradient: ['#4ECDC4', '#44A08D'] as [string, string],
     route: '/wealth'
@@ -61,7 +63,7 @@ const categories: CategoryCard[] = [
   {
     id: 'relationships',
     title: 'Relationships',
-    subtitle: 'Connection & Love',
+    subtitle: 'Family & Connection',
     icon: Users,
     gradient: ['#A8E6CF', '#7FCDCD'] as [string, string],
     route: '/relationships'
@@ -77,7 +79,7 @@ const categories: CategoryCard[] = [
   {
     id: 'learning',
     title: 'Learning',
-    subtitle: 'Skill Development',
+    subtitle: 'Education & Growth',
     icon: BookOpen,
     gradient: ['#6C5CE7', '#A29BFE'] as [string, string],
     route: '/learning'
@@ -101,7 +103,7 @@ const categories: CategoryCard[] = [
   {
     id: 'creativity',
     title: 'Creativity',
-    subtitle: 'Artistic Expression',
+    subtitle: 'Arts & Expression',
     icon: Palette,
     gradient: ['#E67E22', '#D35400'] as [string, string],
     route: '/creativity'
@@ -117,7 +119,7 @@ const categories: CategoryCard[] = [
   {
     id: 'lifestyle',
     title: 'Lifestyle',
-    subtitle: 'Life Balance',
+    subtitle: 'Home & Balance',
     icon: Coffee,
     gradient: ['#16A085', '#1ABC9C'] as [string, string],
     route: '/lifestyle'
@@ -125,10 +127,26 @@ const categories: CategoryCard[] = [
   {
     id: 'break-free',
     title: 'Break Free',
-    subtitle: 'Addiction Freedom',
+    subtitle: 'Habit Freedom',
     icon: ShieldCheck,
     gradient: ['#00B894', '#55A3FF'] as [string, string],
     route: '/break-free'
+  },
+  {
+    id: 'travel',
+    title: 'Travel',
+    subtitle: 'Adventure & Culture',
+    icon: MapPin,
+    gradient: ['#FF9500', '#FF5722'] as [string, string],
+    route: '/travel'
+  },
+  {
+    id: 'community',
+    title: 'Community',
+    subtitle: 'Service & Impact',
+    icon: HandHeart,
+    gradient: ['#8BC34A', '#4CAF50'] as [string, string],
+    route: '/community'
   }
 ];
 

@@ -14,7 +14,9 @@ import {
   Zap,
   ChevronRight,
   Dumbbell,
-  ShieldCheck
+  ShieldCheck,
+  MapPin,
+  HandHeart
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 
@@ -35,34 +37,34 @@ const categories: Category[] = [
     description: 'Complete mind and body wellness toolkit',
     icon: Heart,
     gradient: ['#FF6B6B', '#FF8E8E'],
-    features: ['Stress Management', 'Mental Health', 'Sleep Optimization', 'Break Free'],
+    features: ['Mental Health', 'Sleep Optimization', 'Nutrition', 'Stress Management', 'Medical Care', 'Preventive Health'],
     route: '/health'
   },
   {
     id: 'fitness',
     title: 'Fitness & Sports',
-    description: 'Complete athletic performance and sports training',
+    description: 'Athletic performance, outdoor activities, and sports training',
     icon: Dumbbell,
     gradient: ['#FF7675', '#E17055'],
-    features: ['Workout Plans', 'Sports Training', 'Performance Tracking', 'Nutrition Plans'],
+    features: ['Workout Plans', 'Sports Training', 'Outdoor Activities', 'Athletic Performance', 'Team Sports', 'Adventure Sports'],
     route: '/fitness'
   },
   {
     id: 'wealth',
-    title: 'Wealth & Finance',
-    description: 'Build financial freedom and career success',
+    title: 'Wealth & Career',
+    description: 'Build financial freedom, career success, and entrepreneurship',
     icon: DollarSign,
     gradient: ['#4ECDC4', '#44A08D'],
-    features: ['Personal Finance', 'Investment Tracking', 'Career Growth', 'Startup Resources'],
+    features: ['Personal Finance', 'Investment Tracking', 'Career Growth', 'Entrepreneurship', 'Business Development', 'Professional Skills'],
     route: '/wealth'
   },
   {
     id: 'relationships',
-    title: 'Relationships',
-    description: 'Strengthen connections and build meaningful bonds',
+    title: 'Relationships & Family',
+    description: 'Strengthen connections, family bonds, and parenting skills',
     icon: Users,
     gradient: ['#A8E6CF', '#7FCDCD'],
-    features: ['Dating Advice', 'Family Dynamics', 'Friendship Building', 'Communication Skills'],
+    features: ['Dating Advice', 'Family Dynamics', 'Parenting Skills', 'Communication Skills', 'Social Skills', 'Friendship Building'],
     route: '/relationships'
   },
   {
@@ -76,11 +78,11 @@ const categories: Category[] = [
   },
   {
     id: 'learning',
-    title: 'Learning & Growth',
-    description: 'Continuous skill development and knowledge expansion',
+    title: 'Learning & Education',
+    description: 'Continuous skill development, education, and personal growth',
     icon: BookOpen,
     gradient: ['#6C5CE7', '#A29BFE'],
-    features: ['Skill Development', 'Online Courses', 'Certifications', 'Knowledge Base'],
+    features: ['Skill Development', 'Online Courses', 'Certifications', 'Academic Learning', 'Professional Development', 'Language Learning'],
     route: '/learning'
   },
   {
@@ -95,28 +97,28 @@ const categories: Category[] = [
   {
     id: 'mindfulness',
     title: 'Mindfulness & Spirit',
-    description: 'Find inner peace and spiritual growth',
+    description: 'Find inner peace, spiritual growth, and philosophical wisdom',
     icon: Brain,
     gradient: ['#74B9FF', '#0984E3'],
-    features: ['Meditation', 'Journaling', 'Gratitude Practice', 'Spiritual Growth'],
+    features: ['Meditation', 'Journaling', 'Gratitude Practice', 'Spiritual Growth', 'Philosophy', 'Religious Practice'],
     route: '/mindfulness'
   },
   {
     id: 'creativity',
-    title: 'Creativity & Hobbies',
-    description: 'Unleash your creative potential and explore passions',
+    title: 'Creativity & Arts',
+    description: 'Unleash creativity through arts, music, writing, and entertainment',
     icon: Palette,
     gradient: ['#FD79A8', '#FDCB6E'],
-    features: ['Art & Design', 'Writing', 'Music', 'Creative Projects'],
+    features: ['Art & Design', 'Writing', 'Music', 'Crafts', 'Photography', 'Entertainment'],
     route: '/creativity'
   },
   {
     id: 'lifestyle',
     title: 'Home & Lifestyle',
-    description: 'Create a beautiful and organized life',
+    description: 'Create a beautiful, organized home and optimized lifestyle',
     icon: HomeIcon,
     gradient: ['#55A3FF', '#003D82'],
-    features: ['Home Organization', 'Cooking', 'Interior Design', 'Life Optimization'],
+    features: ['Home Organization', 'Cooking', 'Interior Design', 'Home Improvement', 'Gardening', 'Life Optimization'],
     route: '/lifestyle'
   },
   {
@@ -136,6 +138,24 @@ const categories: Category[] = [
     gradient: ['#00B894', '#55A3FF'],
     features: ['Habit Breaking', 'Behavioral Change', 'Support Groups', 'Positive Habits'],
     route: '/break-free'
+  },
+  {
+    id: 'travel',
+    title: 'Travel & Adventure',
+    description: 'Explore the world and embrace new adventures',
+    icon: MapPin,
+    gradient: ['#FF9500', '#FF5722'],
+    features: ['Travel Planning', 'Cultural Exploration', 'Adventure Activities', 'Language Immersion', 'Photography', 'Local Experiences'],
+    route: '/travel'
+  },
+  {
+    id: 'community',
+    title: 'Community & Service',
+    description: 'Give back to community and make a positive impact',
+    icon: HandHeart,
+    gradient: ['#8BC34A', '#4CAF50'],
+    features: ['Volunteering', 'Community Service', 'Social Impact', 'Charity Work', 'Environmental Action', 'Civic Engagement'],
+    route: '/community'
   }
 ];
 

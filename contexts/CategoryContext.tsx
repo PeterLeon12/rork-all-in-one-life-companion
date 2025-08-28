@@ -15,6 +15,8 @@ export interface CategoryScore {
   energy: number;
   lifestyle: number;
   breakFree: number;
+  travel: number;
+  community: number;
 }
 
 export interface CategoryActivity {
@@ -41,7 +43,9 @@ const initialScores: CategoryScore = {
   creativity: 74,
   energy: 76,
   lifestyle: 73,
-  breakFree: 60
+  breakFree: 60,
+  travel: 50,
+  community: 55
 };
 
 // Define interconnections between categories
@@ -113,6 +117,21 @@ const categoryConnections: Record<string, Partial<CategoryScore>> = {
     lifestyle: 3,
     health: 1,
     energy: 1,
+    mindfulness: 1
+  },
+  // Travel activities
+  travel: {
+    travel: 3,
+    creativity: 1,
+    learning: 2,
+    confidence: 1,
+    relationships: 1
+  },
+  // Community service
+  community: {
+    community: 3,
+    relationships: 2,
+    confidence: 1,
     mindfulness: 1
   }
 };
