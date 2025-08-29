@@ -488,15 +488,6 @@ export default function HomeScreen() {
           <Text style={styles.subtitle}>{timeGreeting.subtitle}</Text>
           <Text style={styles.personalizedMessage}>{personalizedMessage}</Text>
         </View>
-        <TouchableOpacity 
-          style={styles.profileButton}
-          onPress={() => router.push('/profile')}
-          activeOpacity={0.8}
-        >
-          <View style={styles.profileAvatar}>
-            <Text style={styles.profileInitial}>{getInitials()}</Text>
-          </View>
-        </TouchableOpacity>
       </View>
 
       {/* Daily Insight */}
@@ -588,16 +579,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 24,
   },
   greetingContainer: {
     flex: 1,
-    marginRight: 16,
   },
   greeting: {
     fontSize: 28,
@@ -616,22 +603,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontStyle: 'italic',
   },
-  profileButton: {
-    padding: 4,
-  },
-  profileAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#667eea',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileInitial: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
+
   insightCard: {
     marginHorizontal: 24,
     marginBottom: 32,
