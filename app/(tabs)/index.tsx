@@ -488,6 +488,20 @@ export default function HomeScreen() {
           <Text style={styles.subtitle}>{timeGreeting.subtitle}</Text>
           <Text style={styles.personalizedMessage}>{personalizedMessage}</Text>
         </View>
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={() => router.push('/profile')}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['#667eea', '#764ba2']}
+            style={styles.profileButtonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={styles.profileButtonText}>{getInitials()}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </View>
 
       {/* Daily Insight */}
@@ -579,12 +593,37 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 24,
   },
   greetingContainer: {
     flex: 1,
+    marginRight: 16,
+  },
+  profileButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  profileButtonGradient: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   greeting: {
     fontSize: 28,
