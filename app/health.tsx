@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Alert, Modal } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from 'expo-router';
 import { 
@@ -8,17 +8,9 @@ import {
   Brain, 
   Moon, 
   Droplets,
-  TrendingUp,
   Plus,
-  Play,
   MessageCircle,
-  Shield,
-  Dumbbell,
-  Target,
   CheckCircle,
-  X,
-  Timer,
-  Award,
   Utensils
 } from 'lucide-react-native';
 import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
@@ -41,10 +33,8 @@ interface QuickAction {
   title: string;
   icon: React.ComponentType<any>;
   color: string;
-  description: string;
-  route?: string;
   action?: string;
-  duration?: number;
+  increment?: number;
 }
 
 const initialHealthMetrics: HealthMetric[] = [
@@ -55,70 +45,40 @@ const initialHealthMetrics: HealthMetric[] = [
 ];
 
 const quickActions: QuickAction[] = [
-  { id: 'workout', title: 'Start Workout', icon: Activity, color: '#FF6B6B', description: '30 min HIIT', route: '/fitness', action: 'workout', duration: 30 },
-  { id: 'meditate', title: 'Meditate', icon: Brain, color: '#6C5CE7', description: 'Guided session', action: 'meditate', duration: 10 },
-  { id: 'mood', title: 'Log Mood', icon: Heart, color: '#FFD93D', description: 'Track feelings', action: 'mood' },
-  { id: 'water', title: 'Drink Water', icon: Droplets, color: '#4ECDC4', description: 'Stay hydrated', action: 'water' },
-  { id: 'meal', title: 'Log Meal', icon: Utensils, color: '#27AE60', description: 'Track nutrition', action: 'meal' },
-  { id: 'break-free', title: 'Break Free', icon: Shield, color: '#E74C3C', description: 'Freedom journey', route: '/break-free' },
-  { id: 'fitness-coach', title: 'Fitness Coach', icon: Dumbbell, color: '#FF7675', description: 'AI trainer', route: '/fitness-chat' },
-  { id: 'sports', title: 'Sports Training', icon: Target, color: '#74B9FF', description: 'Skill building', route: '/fitness' }
+  { id: 'water', title: 'Water', icon: Droplets, color: '#4ECDC4', action: 'water', increment: 1 },
+  { id: 'meditation', title: 'Meditate', icon: Brain, color: '#6C5CE7', action: 'meditation', increment: 10 },
+  { id: 'meal', title: 'Meal', icon: Utensils, color: '#27AE60', action: 'meal' },
+  { id: 'mood', title: 'Mood', icon: Heart, color: '#FFD93D', action: 'mood' }
 ];
 
 const healthPrograms = [
   {
-    title: 'Stress Management',
-    description: '7-day program to reduce stress and anxiety',
-    duration: '7 days',
-    progress: 43,
-    color: '#FF6B6B'
-  },
-  {
     title: 'Fitness Challenge',
-    description: '30-day full body transformation',
-    duration: '30 days',
+    description: '30-day transformation',
     progress: 67,
     color: '#4ECDC4',
     route: '/fitness'
   },
   {
-    title: 'Mindfulness Journey',
-    description: 'Build a sustainable meditation practice',
-    duration: '21 days',
+    title: 'Mindfulness',
+    description: 'Daily meditation practice',
     progress: 29,
     color: '#6C5CE7'
   },
   {
     title: 'Break Free',
-    description: 'Break free from harmful habits and addictions',
-    duration: 'Ongoing',
+    description: 'Overcome harmful habits',
     progress: 0,
     color: '#E74C3C',
-    isNew: true
-  },
-  {
-    title: 'Athletic Performance',
-    description: 'Optimize your sports performance and training',
-    duration: '12 weeks',
-    progress: 15,
-    color: '#FF7675',
-    route: '/fitness'
+    route: '/break-free'
   }
 ];
 
 export default function HealthScreen() {
   const { addActivity } = useCategories();
-  const { score: healthScore, weeklyImprovement, allScores } = useCategoryData('health');
+  const { score: healthScore, weeklyImprovement } = useCategoryData('health');
   const [healthMetrics, setHealthMetrics] = useState<HealthMetric[]>(initialHealthMetrics);
-  const [showQuickActionModal, setShowQuickActionModal] = useState<boolean>(false);
-  const [selectedAction, setSelectedAction] = useState<QuickAction | null>(null);
   const [dailyStreak] = useState<number>(5);
-  const [weeklyGoals] = useState({
-    workouts: { completed: 3, target: 5 },
-    meditation: { completed: 4, target: 7 },
-    water: { completed: 6, target: 7 },
-    sleep: { completed: 5, target: 7 }
-  });
 
   // Load saved metrics from storage
   useEffect(() => {
@@ -149,13 +109,7 @@ export default function HealthScreen() {
   };
 
   const handleQuickAction = (action: QuickAction) => {
-    if (action.route) {
-      router.push(action.route);
-      return;
-    }
-
-    setSelectedAction(action);
-    setShowQuickActionModal(true);
+    executeAction(action);
   };
 
   const executeAction = (action: QuickAction) => {
@@ -163,35 +117,28 @@ export default function HealthScreen() {
     let metricUpdate = null;
     
     switch (action.action) {
-      case 'workout':
+      case 'meditation':
         activityData = {
-          ...createActivityImpact.exercise('moderate'),
+          ...createActivityImpact.meditation(action.increment || 10),
           categoryId: 'health',
-          title: `${action.title} - ${action.duration} min`
+          title: `Meditation - ${action.increment} min`
         };
-        break;
-      case 'meditate':
-        activityData = {
-          ...createActivityImpact.meditation(action.duration || 10),
-          categoryId: 'health',
-          title: `${action.title} - ${action.duration} min`
-        };
-        metricUpdate = { id: 'meditation', increment: action.duration || 10 };
+        metricUpdate = { id: 'meditation', increment: action.increment || 10 };
         break;
       case 'water':
         activityData = {
           ...createActivityImpact.healthActivity(),
           categoryId: 'health',
-          title: 'Drank water - staying hydrated',
+          title: 'Drank water',
           impact: { health: 1, energy: 1 }
         };
-        metricUpdate = { id: 'water', increment: 1 };
+        metricUpdate = { id: 'water', increment: action.increment || 1 };
         break;
       case 'mood':
         activityData = {
           ...createActivityImpact.healthActivity(),
           categoryId: 'health',
-          title: 'Logged mood - mental health check-in',
+          title: 'Logged mood',
           impact: { health: 2, mindfulness: 1 }
         };
         break;
@@ -199,7 +146,7 @@ export default function HealthScreen() {
         activityData = {
           ...createActivityImpact.healthActivity(),
           categoryId: 'health',
-          title: 'Logged healthy meal - nutrition tracking',
+          title: 'Logged meal',
           impact: { health: 2, energy: 1 }
         };
         break;
@@ -217,16 +164,6 @@ export default function HealthScreen() {
     if (metricUpdate) {
       updateMetric(metricUpdate.id, metricUpdate.increment);
     }
-
-    // Show success message
-    Alert.alert(
-      'Great job! 🎉',
-      `You completed: ${action.title}`,
-      [{ text: 'Keep going!', style: 'default' }]
-    );
-
-    setShowQuickActionModal(false);
-    setSelectedAction(null);
   };
   
   const renderMetricCard = (metric: HealthMetric, index: number) => {
@@ -246,11 +183,11 @@ export default function HealthScreen() {
           if (metric.actionable) {
             const action: QuickAction = {
               id: metric.id,
-              title: `Update ${metric.label}`,
+              title: metric.label,
               icon: metric.icon,
               color: metric.color,
-              description: `Add to your ${metric.label.toLowerCase()}`,
-              action: metric.id
+              action: metric.id,
+              increment: metric.id === 'water' ? 1 : metric.id === 'meditation' ? 10 : undefined
             };
             handleQuickAction(action);
           }
@@ -307,22 +244,13 @@ export default function HealthScreen() {
       <TouchableOpacity 
         key={index} 
         style={styles.quickActionCard} 
-        activeOpacity={0.8}
+        activeOpacity={0.7}
         onPress={() => handleQuickAction(action)}
       >
-        <LinearGradient
-          colors={[action.color, action.color + 'CC']}
-          style={styles.quickActionGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <IconComponent size={24} color="white" />
-          <Text style={styles.quickActionTitle}>{action.title}</Text>
-          <Text style={styles.quickActionDescription}>{action.description}</Text>
-          <View style={styles.playButton}>
-            <Play size={16} color="white" fill="white" />
-          </View>
-        </LinearGradient>
+        <View style={[styles.quickActionIcon, { backgroundColor: action.color }]}>
+          <IconComponent size={20} color="white" />
+        </View>
+        <Text style={styles.quickActionTitle}>{action.title}</Text>
       </TouchableOpacity>
     );
   };
@@ -331,36 +259,21 @@ export default function HealthScreen() {
     const progressWidth = (width - 72) * (program.progress / 100);
     
     return (
-      <View key={index} style={styles.programCard}>
+      <TouchableOpacity 
+        key={index} 
+        style={styles.programCard}
+        onPress={() => program.route && router.push(program.route)}
+        activeOpacity={0.8}
+      >
         <View style={styles.programHeader}>
           <View style={styles.programInfo}>
-            <View style={styles.programTitleRow}>
-              <Text style={styles.programTitle}>{program.title}</Text>
-              {program.isNew && (
-                <View style={styles.newBadge}>
-                  <Text style={styles.newBadgeText}>NEW</Text>
-                </View>
-              )}
-            </View>
+            <Text style={styles.programTitle}>{program.title}</Text>
             <Text style={styles.programDescription}>{program.description}</Text>
-            <Text style={styles.programDuration}>
-              {program.duration} {program.progress > 0 ? `• ${program.progress}% complete` : ''}
-            </Text>
+            {program.progress > 0 && (
+              <Text style={styles.programDescription}>{program.progress}% complete</Text>
+            )}
           </View>
-          <TouchableOpacity 
-            style={[styles.continueButton, { backgroundColor: program.color }]}
-            onPress={() => {
-              if (program.title === 'Break Free') {
-                router.push('/break-free');
-              } else if (program.route) {
-                router.push(program.route);
-              }
-            }}
-          >
-            <Text style={styles.continueButtonText}>
-              {program.progress === 0 ? 'Start' : 'Continue'}
-            </Text>
-          </TouchableOpacity>
+          <View style={[styles.programIndicator, { backgroundColor: program.color }]} />
         </View>
         
         {program.progress > 0 && (
@@ -375,7 +288,7 @@ export default function HealthScreen() {
             </View>
           </View>
         )}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -383,7 +296,7 @@ export default function HealthScreen() {
     <>
       <Stack.Screen 
         options={{ 
-          title: "Health & Wellness",
+          title: "Health",
           headerStyle: { backgroundColor: '#FF6B6B' },
           headerTintColor: 'white',
           headerTitleStyle: { fontWeight: 'bold' }
@@ -409,10 +322,10 @@ export default function HealthScreen() {
           >
             <View style={styles.headerContent}>
               <Heart size={32} color="white" />
-              <Text style={styles.headerTitle}>Your Health Score</Text>
+              <Text style={styles.headerTitle}>Health</Text>
               <Text style={styles.headerScore}>{healthScore}/100</Text>
               <Text style={styles.headerSubtitle}>
-                {weeklyImprovement > 0 ? `+${weeklyImprovement} this week!` : 'Keep building healthy habits!'}
+                {weeklyImprovement > 0 ? `+${weeklyImprovement} this week` : 'Keep building healthy habits'}
               </Text>
               
               <TouchableOpacity 
@@ -421,7 +334,7 @@ export default function HealthScreen() {
                 activeOpacity={0.8}
               >
                 <MessageCircle size={20} color="white" />
-                <Text style={styles.aiChatButtonText}>Chat with AI Health Coach</Text>
+                <Text style={styles.aiChatButtonText}>AI Coach</Text>
               </TouchableOpacity>
             </View>
           </LinearGradient>
@@ -430,168 +343,40 @@ export default function HealthScreen() {
         {/* Daily Streak */}
         <View style={styles.section}>
           <View style={styles.streakCard}>
-            <LinearGradient
-              colors={['#FFD93D', '#FF6B6B']}
-              style={styles.streakGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.streakContent}>
-                <Award size={28} color="white" />
-                <Text style={styles.streakTitle}>Daily Streak</Text>
-                <Text style={styles.streakDays}>{dailyStreak} Days</Text>
-                <Text style={styles.streakSubtitle}>Keep the momentum going!</Text>
-              </View>
-            </LinearGradient>
+            <Text style={styles.streakDays}>{dailyStreak}</Text>
+            <Text style={styles.streakTitle}>Day Streak</Text>
           </View>
         </View>
 
         {/* Today's Metrics */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today&apos;s Metrics</Text>
-          <Text style={styles.sectionSubtitle}>Track your daily health goals</Text>
+          <Text style={styles.sectionTitle}>Today</Text>
           {healthMetrics.map(renderMetricCard)}
         </View>
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>Quick Log</Text>
           <View style={styles.quickActionsGrid}>
             {quickActions.map(renderQuickAction)}
           </View>
         </View>
 
-        {/* Active Programs */}
+        {/* Programs */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Active Programs</Text>
-            <TouchableOpacity style={styles.addButton}>
-              <Plus size={20} color="#667eea" />
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.sectionTitle}>Programs</Text>
           {healthPrograms.map(renderProgram)}
         </View>
 
-        {/* Weekly Goals */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Weekly Goals</Text>
-          <Text style={styles.sectionSubtitle}>Your progress this week</Text>
-          <View style={styles.weeklyGoalsContainer}>
-            {Object.entries(weeklyGoals).map(([key, goal]) => {
-              const progress = Math.round((goal.completed / goal.target) * 100);
-              const isCompleted = goal.completed >= goal.target;
-              
-              return (
-                <View key={key} style={styles.weeklyGoalCard}>
-                  <View style={styles.weeklyGoalHeader}>
-                    <Text style={styles.weeklyGoalTitle}>
-                      {key.charAt(0).toUpperCase() + key.slice(1)}
-                    </Text>
-                    {isCompleted && <CheckCircle size={16} color="#27AE60" />}
-                  </View>
-                  <Text style={styles.weeklyGoalProgress}>
-                    {goal.completed}/{goal.target} ({progress}%)
-                  </Text>
-                  <View style={styles.weeklyProgressBar}>
-                    <View 
-                      style={[
-                        styles.weeklyProgressFill,
-                        { width: `${progress}%`, backgroundColor: isCompleted ? '#27AE60' : '#FF6B6B' }
-                      ]}
-                    />
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        </View>
 
-        {/* Weekly Insights */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week&apos;s Insights</Text>
-          <View style={styles.insightCard}>
-            <View style={styles.insightHeader}>
-              <TrendingUp size={24} color="#4ECDC4" />
-              <Text style={styles.insightTitle}>Improvement Trend</Text>
-            </View>
-            <Text style={styles.insightText}>
-              Your health activities are boosting other areas! Exercise improves fitness (+{allScores.fitness}%), energy (+{allScores.energy}%), and confidence (+{allScores.confidence}%).
-            </Text>
-            <View style={styles.insightStats}>
-              <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>{allScores.fitness}%</Text>
-                <Text style={styles.insightStatLabel}>Fitness Boost</Text>
-              </View>
-              <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>{allScores.energy}%</Text>
-                <Text style={styles.insightStatLabel}>Energy Level</Text>
-              </View>
-              <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>{allScores.confidence}%</Text>
-                <Text style={styles.insightStatLabel}>Confidence</Text>
-              </View>
-            </View>
-          </View>
-        </View>
+
+
             </ScrollView>
           </View>
         </LinearGradient>
       </View>
 
-      {/* Quick Action Modal */}
-      <Modal
-        visible={showQuickActionModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowQuickActionModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {selectedAction && (
-              <>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>{selectedAction.title}</Text>
-                  <TouchableOpacity 
-                    onPress={() => setShowQuickActionModal(false)}
-                    style={styles.modalCloseButton}
-                  >
-                    <X size={24} color="#7F8C8D" />
-                  </TouchableOpacity>
-                </View>
-                
-                <View style={styles.modalBody}>
-                  <View style={[styles.modalIcon, { backgroundColor: selectedAction.color + '20' }]}>
-                    <selectedAction.icon size={32} color={selectedAction.color} />
-                  </View>
-                  <Text style={styles.modalDescription}>{selectedAction.description}</Text>
-                  
-                  {selectedAction.duration && (
-                    <View style={styles.durationContainer}>
-                      <Timer size={16} color="#7F8C8D" />
-                      <Text style={styles.durationText}>{selectedAction.duration} minutes</Text>
-                    </View>
-                  )}
-                </View>
-                
-                <View style={styles.modalActions}>
-                  <TouchableOpacity 
-                    style={styles.modalCancelButton}
-                    onPress={() => setShowQuickActionModal(false)}
-                  >
-                    <Text style={styles.modalCancelText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.modalConfirmButton, { backgroundColor: selectedAction.color }]}
-                    onPress={() => executeAction(selectedAction)}
-                  >
-                    <Text style={styles.modalConfirmText}>Complete</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-          </View>
-        </View>
-      </Modal>
+
     </>
   );
 }
@@ -741,21 +526,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   quickActionCard: {
-    width: (width - 60) / 2,
-    marginBottom: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
+    width: (width - 60) / 4,
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  quickActionGradient: {
-    padding: 20,
-    height: 120,
-    justifyContent: 'space-between',
+  quickActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   quickActionTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 8,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2C3E50',
+    textAlign: 'center',
   },
   quickActionDescription: {
     color: 'white',
@@ -884,6 +671,11 @@ const styles = StyleSheet.create({
   programInfo: {
     flex: 1,
   },
+  programIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
   programTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -934,33 +726,27 @@ const styles = StyleSheet.create({
     marginTop: -8,
   },
   streakCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     marginHorizontal: 24,
     borderRadius: 16,
-    overflow: 'hidden',
+    padding: 20,
+    alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  streakGradient: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  streakContent: {
-    alignItems: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   streakTitle: {
-    color: 'white',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    marginTop: 8,
+    color: '#7F8C8D',
   },
   streakDays: {
-    color: 'white',
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    marginTop: 4,
+    color: '#FF6B6B',
+    marginBottom: 4,
   },
   streakSubtitle: {
     color: 'white',
