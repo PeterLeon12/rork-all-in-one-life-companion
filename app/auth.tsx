@@ -64,11 +64,28 @@ export default function AuthScreen() {
       if (result.success) {
         router.replace('/(tabs)');
       } else {
-        Alert.alert('Authentication Failed', result.message);
+        // More specific error messages
+        let errorTitle = 'Authentication Failed';
+        let errorMessage = result.message;
+        
+        if (result.message.includes('Invalid email or password')) {
+          errorTitle = isLogin ? 'Login Failed' : 'Registration Failed';
+          errorMessage = isLogin 
+            ? 'The email/username or password you entered is incorrect. Please try again.'
+            : 'There was an issue creating your account. Please check your information and try again.';
+        } else if (result.message.includes('User with this email already exists')) {
+          errorTitle = 'Account Already Exists';
+          errorMessage = 'An account with this email already exists. Please try logging in instead.';
+        } else if (result.message.includes('Invalid email address')) {
+          errorTitle = 'Invalid Email';
+          errorMessage = 'Please enter a valid email address.';
+        }
+        
+        Alert.alert(errorTitle, errorMessage);
       }
-    } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } catch (error: any) {
       console.error('Auth error:', error);
+      Alert.alert('Connection Error', 'Unable to connect to the server. Please check your internet connection and try again.');
     } finally {
       setIsLoading(false);
     }

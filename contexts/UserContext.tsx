@@ -308,7 +308,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
       
       if (isLogin === true) {
         // Login with existing account
-        result = await trpcClient.auth.login.mutate({ email, password });
+        result = await trpcClient.auth.login.mutate({ emailOrUsername: email, password });
       } else {
         // Register new account
         result = await trpcClient.auth.register.mutate({ name, email, password });
