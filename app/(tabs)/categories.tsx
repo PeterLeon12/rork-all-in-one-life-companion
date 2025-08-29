@@ -1,5 +1,5 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
   Heart, 
@@ -16,9 +16,14 @@ import {
   Dumbbell,
   ShieldCheck,
   MapPin,
-  HandHeart
+  HandHeart,
+  Search,
+  Filter,
+  X
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useCategories } from '@/contexts/CategoryContext';
+import * as Haptics from 'expo-haptics';
 
 interface Category {
   id: string;
@@ -160,8 +165,99 @@ const categories: Category[] = [
 ];
 
 export default function CategoriesScreen() {
-  const renderCategory = (category: Category) => {
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const { getCategoryProgress } = useCategories();
+  
+  const filters = [
+    { id: 'all', label: 'All Categories', color: '#667eea' },
+    { id: 'high-progress', label: 'High Progress', color: '#00B894' },
+    { id: 'needs-attention', label: 'Needs Attention', color: '#FF6B6B' },
+    { id: 'wellness', label: 'Wellness', color: '#FF6B6B' },
+    { id: 'growth', label: 'Growth', color: '#6C5CE7' },
+    { id: 'lifestyle', label: 'Lifestyle', color: '#4ECDC4' }
+  ];
+  
+  const filteredCategories = useMemo(() => {
+    let filtered = categories;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(category => 
+        category.title.toLowerCase().includes(query) ||
+        category.description.toLowerCase().includes(query) ||
+        category.features.some(feature => feature.toLowerCase().includes(query))
+      );
+    }
+    
+    // Apply category filter
+    if (selectedFilter !== 'all') {
+      switch (selectedFilter) {
+        case 'high-progress':
+          filtered = filtered.filter(category => getCategoryProgress(category.id) >= 70);
+          break;
+        case 'needs-attention':
+          filtered = filtered.filter(category => getCategoryProgress(category.id) < 30);
+          break;
+        case 'wellness':
+          filtered = filtered.filter(category => 
+            ['health', 'fitness', 'mindfulness', 'energy'].includes(category.id)
+          );
+          break;
+        case 'growth':
+          filtered = filtered.filter(category => 
+            ['learning', 'confidence', 'productivity', 'creativity'].includes(category.id)
+          );
+          break;
+        case 'lifestyle':
+          filtered = filtered.filter(category => 
+            ['wealth', 'relationships', 'lifestyle', 'travel', 'community'].includes(category.id)
+          );
+          break;
+      }
+    }
+    
+    return filtered;
+  }, [searchQuery, selectedFilter, getCategoryProgress]);
+  
+  const handleFilterPress = useCallback(async (filterId: string) => {
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setSelectedFilter(filterId);
+  }, []);
+  
+  const clearSearch = useCallback(() => {
+    setSearchQuery('');
+  }, []);
+  
+  const renderFilterChip = useCallback((filter: any) => {
+    const isSelected = selectedFilter === filter.id;
+    
+    return (
+      <TouchableOpacity
+        key={filter.id}
+        style={[
+          styles.filterChip,
+          isSelected && { backgroundColor: filter.color }
+        ]}
+        onPress={() => handleFilterPress(filter.id)}
+        activeOpacity={0.7}
+      >
+        <Text style={[
+          styles.filterChipText,
+          isSelected && styles.filterChipTextSelected
+        ]}>
+          {filter.label}
+        </Text>
+      </TouchableOpacity>
+    );
+  }, [selectedFilter, handleFilterPress]);
+  
+  const renderCategory = useCallback((category: Category) => {
     const IconComponent = category.icon;
+    const progress = getCategoryProgress(category.id);
     
     return (
       <TouchableOpacity
@@ -178,12 +274,17 @@ export default function CategoriesScreen() {
         >
           <View style={styles.cardHeader}>
             <IconComponent size={28} color="white" />
-            <ChevronRight size={20} color="white" style={styles.chevron} />
+            <View style={styles.progressBadge}>
+              <Text style={styles.progressText}>{progress}%</Text>
+            </View>
           </View>
         </LinearGradient>
         
         <View style={styles.cardContent}>
-          <Text style={styles.cardTitle}>{category.title}</Text>
+          <View style={styles.cardTitleRow}>
+            <Text style={styles.cardTitle}>{category.title}</Text>
+            <ChevronRight size={16} color="#BDC3C7" />
+          </View>
           <Text style={styles.cardDescription}>{category.description}</Text>
           
           <View style={styles.featuresContainer}>
@@ -201,7 +302,7 @@ export default function CategoriesScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [getCategoryProgress]);
 
   return (
     <View style={styles.backgroundContainer}>
@@ -216,6 +317,37 @@ export default function CategoriesScreen() {
             <View style={styles.header}>
               <Text style={styles.title}>Life Categories</Text>
               <Text style={styles.subtitle}>Explore all areas of personal growth</Text>
+              
+              {/* Search Bar */}
+              <View style={styles.searchContainer}>
+                <View style={styles.searchInputContainer}>
+                  <Search size={20} color="#7F8C8D" style={styles.searchIcon} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search categories, features..."
+                    placeholderTextColor="#95A5A6"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    autoCorrect={false}
+                    autoCapitalize="none"
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                      <X size={18} color="#7F8C8D" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+              
+              {/* Filter Chips */}
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                style={styles.filtersScroll}
+                contentContainerStyle={styles.filtersContainer}
+              >
+                {filters.map(renderFilterChip)}
+              </ScrollView>
             </View>
             
             <ScrollView 
@@ -223,7 +355,20 @@ export default function CategoriesScreen() {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.scrollContent}
             >
-              {categories.map(renderCategory)}
+              {filteredCategories.length > 0 ? (
+                filteredCategories.map(renderCategory)
+              ) : (
+                <View style={styles.emptyState}>
+                  <Filter size={48} color="#BDC3C7" />
+                  <Text style={styles.emptyStateTitle}>No categories found</Text>
+                  <Text style={styles.emptyStateText}>
+                    {searchQuery.trim() 
+                      ? `No categories match "${searchQuery}"`
+                      : 'No categories match the selected filter'
+                    }
+                  </Text>
+                </View>
+              )}
             </ScrollView>
           </View>
         </View>
@@ -326,5 +471,91 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#5D6D7E',
     fontWeight: '500',
+  },
+  searchContainer: {
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#2C3E50',
+  },
+  clearButton: {
+    padding: 4,
+  },
+  filtersScroll: {
+    marginBottom: 8,
+  },
+  filtersContainer: {
+    paddingRight: 24,
+  },
+  filterChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#7F8C8D',
+  },
+  filterChipTextSelected: {
+    color: 'white',
+  },
+  progressBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  progressText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  cardTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#7F8C8D',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#95A5A6',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

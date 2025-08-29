@@ -1,5 +1,5 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View, Dimensions } from 'react-native';
+import React, { useMemo } from 'react';
+import { ScrollView, StyleSheet, Text, View, Dimensions, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
   TrendingUp, 
@@ -11,8 +11,17 @@ import {
   Users,
   Shield,
   BookOpen,
-  Zap
+  Zap,
+  Dumbbell,
+  Brain,
+  Palette,
+  Coffee,
+  ShieldCheck,
+  MapPin,
+  HandHeart
 } from 'lucide-react-native';
+import { useCategories } from '@/contexts/CategoryContext';
+import { useUser, useUserAchievements } from '@/contexts/UserContext';
 
 const { width } = Dimensions.get('window');
 
@@ -21,73 +30,83 @@ interface ProgressData {
   icon: React.ComponentType<any>;
   color: string;
   progress: number;
-  streak: number;
-  completedGoals: number;
-  totalGoals: number;
+  recentActivities: number;
+  categoryId: string;
 }
 
-const progressData: ProgressData[] = [
-  {
-    category: 'Health',
-    icon: Heart,
-    color: '#FF6B6B',
-    progress: 78,
-    streak: 12,
-    completedGoals: 8,
-    totalGoals: 10
-  },
-  {
-    category: 'Wealth',
-    icon: DollarSign,
-    color: '#4ECDC4',
-    progress: 65,
-    streak: 8,
-    completedGoals: 6,
-    totalGoals: 12
-  },
-  {
-    category: 'Relationships',
-    icon: Users,
-    color: '#A8E6CF',
-    progress: 82,
-    streak: 15,
-    completedGoals: 9,
-    totalGoals: 11
-  },
-  {
-    category: 'Confidence',
-    icon: Shield,
-    color: '#FFD93D',
-    progress: 71,
-    streak: 6,
-    completedGoals: 5,
-    totalGoals: 8
-  },
-  {
-    category: 'Learning',
-    icon: BookOpen,
-    color: '#6C5CE7',
-    progress: 89,
-    streak: 21,
-    completedGoals: 12,
-    totalGoals: 14
-  }
-];
-
-const achievements = [
-  { title: '7-Day Streak', description: 'Completed daily check-ins for a week', icon: Calendar, color: '#FF6B6B' },
-  { title: 'Goal Crusher', description: 'Completed 50 goals this month', icon: Target, color: '#4ECDC4' },
-  { title: 'Learning Master', description: 'Finished 5 courses', icon: BookOpen, color: '#6C5CE7' },
-  { title: 'Wellness Warrior', description: 'Maintained health habits for 30 days', icon: Heart, color: '#A8E6CF' }
-];
+const categoryConfig = {
+  health: { icon: Heart, color: '#FF6B6B', name: 'Health' },
+  fitness: { icon: Dumbbell, color: '#E17055', name: 'Fitness' },
+  wealth: { icon: DollarSign, color: '#4ECDC4', name: 'Wealth' },
+  relationships: { icon: Users, color: '#7FCDCD', name: 'Relationships' },
+  confidence: { icon: Shield, color: '#FFD93D', name: 'Confidence' },
+  learning: { icon: BookOpen, color: '#6C5CE7', name: 'Learning' },
+  productivity: { icon: Target, color: '#E84393', name: 'Productivity' },
+  mindfulness: { icon: Brain, color: '#8E44AD', name: 'Mindfulness' },
+  creativity: { icon: Palette, color: '#D35400', name: 'Creativity' },
+  energy: { icon: Zap, color: '#E67E22', name: 'Energy' },
+  lifestyle: { icon: Coffee, color: '#1ABC9C', name: 'Lifestyle' },
+  'break-free': { icon: ShieldCheck, color: '#00B894', name: 'Break Free' },
+  travel: { icon: MapPin, color: '#FF5722', name: 'Travel' },
+  community: { icon: HandHeart, color: '#4CAF50', name: 'Community' }
+};
 
 export default function ProgressScreen() {
+  const { scores, activities, getCategoryProgress } = useCategories();
+  const { user } = useUser();
+  const { unlockedAchievements, recentAchievements } = useUserAchievements();
+  
+  // Calculate real progress data from user activities
+  const progressData: ProgressData[] = useMemo(() => {
+    return Object.entries(categoryConfig).map(([categoryId, config]) => {
+      const progress = getCategoryProgress(categoryId);
+      const recentActivities = activities.filter(activity => 
+        activity.categoryId === categoryId && 
+        activity.timestamp > Date.now() - (7 * 24 * 60 * 60 * 1000) // Last 7 days
+      ).length;
+      
+      return {
+        category: config.name,
+        icon: config.icon,
+        color: config.color,
+        progress,
+        recentActivities,
+        categoryId
+      };
+    }).sort((a, b) => b.progress - a.progress); // Sort by progress descending
+  }, [scores, activities, getCategoryProgress]);
+  
+  // Calculate overall stats
+  const overallStats = useMemo(() => {
+    const totalActivities = activities.length;
+    const thisWeekActivities = activities.filter(activity => 
+      activity.timestamp > Date.now() - (7 * 24 * 60 * 60 * 1000)
+    ).length;
+    
+    const averageScore = Math.round(
+      Object.values(scores).reduce((sum: number, score: any) => sum + score, 0) / Object.keys(scores).length
+    );
+    
+    const activeDays = new Set(
+      activities
+        .filter(activity => activity.timestamp > Date.now() - (7 * 24 * 60 * 60 * 1000))
+        .map(activity => new Date(activity.timestamp).toDateString())
+    ).size;
+    
+    return {
+      averageScore,
+      totalActivities,
+      thisWeekActivities,
+      activeDays,
+      currentStreak: user.stats.currentStreak
+    };
+  }, [activities, scores, user.stats.currentStreak]);
   const renderProgressCard = (data: ProgressData, index: number) => {
     const IconComponent = data.icon;
-    const progressWidth = (width - 72) * (data.progress / 100);
+    const progressWidth = Math.max((width - 72) * (data.progress / 100), 8); // Minimum width for visibility
     
     return (
-      <View key={index} style={styles.progressCard}>
+      <TouchableOpacity key={index} style={styles.progressCard} activeOpacity={0.8}>
         <View style={styles.progressHeader}>
           <View style={styles.categoryInfo}>
             <View style={[styles.iconContainer, { backgroundColor: data.color + '20' }]}>
@@ -111,29 +130,30 @@ export default function ProgressScreen() {
         
         <View style={styles.progressStats}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{data.streak}</Text>
-            <Text style={styles.statLabel}>Day Streak</Text>
+            <Text style={styles.statValue}>{data.recentActivities}</Text>
+            <Text style={styles.statLabel}>This Week</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{data.completedGoals}/{data.totalGoals}</Text>
-            <Text style={styles.statLabel}>Goals</Text>
+            <Text style={styles.statValue}>{data.progress > 0 ? '✓' : '○'}</Text>
+            <Text style={styles.statLabel}>Active</Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   const renderAchievement = (achievement: any, index: number) => {
-    const IconComponent = achievement.icon;
-    
     return (
       <View key={index} style={styles.achievementCard}>
-        <View style={[styles.achievementIcon, { backgroundColor: achievement.color + '20' }]}>
-          <IconComponent size={24} color={achievement.color} />
+        <View style={[styles.achievementIcon, { backgroundColor: '#667eea20' }]}>
+          <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
         </View>
         <View style={styles.achievementContent}>
           <Text style={styles.achievementTitle}>{achievement.title}</Text>
           <Text style={styles.achievementDescription}>{achievement.description}</Text>
+          <Text style={styles.achievementDate}>
+            Unlocked {new Date(achievement.unlockedAt).toLocaleDateString()}
+          </Text>
         </View>
       </View>
     );
@@ -170,19 +190,19 @@ export default function ProgressScreen() {
             <View style={styles.statsContent}>
               <View style={styles.statColumn}>
                 <TrendingUp size={24} color="white" />
-                <Text style={styles.statNumber}>+18%</Text>
-                <Text style={styles.statText}>Overall Growth</Text>
+                <Text style={styles.statNumber}>{overallStats.averageScore}%</Text>
+                <Text style={styles.statText}>Average Score</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statColumn}>
                 <Target size={24} color="white" />
-                <Text style={styles.statNumber}>47</Text>
-                <Text style={styles.statText}>Goals Completed</Text>
+                <Text style={styles.statNumber}>{overallStats.totalActivities}</Text>
+                <Text style={styles.statText}>Total Activities</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statColumn}>
                 <Zap size={24} color="white" />
-                <Text style={styles.statNumber}>28</Text>
+                <Text style={styles.statNumber}>{overallStats.currentStreak}</Text>
                 <Text style={styles.statText}>Day Streak</Text>
               </View>
             </View>
@@ -198,7 +218,14 @@ export default function ProgressScreen() {
         {/* Recent Achievements */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Achievements</Text>
-          {achievements.map(renderAchievement)}
+          {recentAchievements.length > 0 ? (
+            recentAchievements.map(renderAchievement)
+          ) : (
+            <View style={styles.emptyState}>
+              <Award size={48} color="#BDC3C7" />
+              <Text style={styles.emptyStateText}>Complete activities to unlock achievements!</Text>
+            </View>
+          )}
         </View>
 
         {/* Weekly Summary */}
@@ -207,19 +234,19 @@ export default function ProgressScreen() {
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Days Active</Text>
-              <Text style={styles.summaryValue}>6/7</Text>
+              <Text style={styles.summaryValue}>{overallStats.activeDays}/7</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Goals Completed</Text>
-              <Text style={styles.summaryValue}>12</Text>
+              <Text style={styles.summaryLabel}>Activities This Week</Text>
+              <Text style={styles.summaryValue}>{overallStats.thisWeekActivities}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Time Invested</Text>
-              <Text style={styles.summaryValue}>4h 32m</Text>
+              <Text style={styles.summaryLabel}>Achievements Unlocked</Text>
+              <Text style={styles.summaryValue}>{unlockedAchievements.length}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Categories Improved</Text>
-              <Text style={styles.summaryValue}>5</Text>
+              <Text style={styles.summaryLabel}>Categories Active</Text>
+              <Text style={styles.summaryValue}>{progressData.filter(p => p.progress > 0).length}</Text>
             </View>
           </View>
         </View>
@@ -449,5 +476,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#2C3E50',
+  },
+  achievementEmoji: {
+    fontSize: 24,
+    textAlign: 'center',
+  },
+  achievementDate: {
+    fontSize: 12,
+    color: '#95A5A6',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#95A5A6',
+    textAlign: 'center',
+    marginTop: 16,
+    lineHeight: 22,
   },
 });

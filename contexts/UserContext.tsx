@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
 import { trpcClient, setAuthToken, removeAuthToken, getStoredAuthToken } from '@/lib/trpc';
+import { Platform, Alert } from 'react-native';
+import * as Notifications from 'expo-notifications';
 
 export interface UserProfile {
   id: string;
@@ -203,6 +205,47 @@ export const [UserProvider, useUser] = createContextHook(() => {
     }
   }, [saveUserData, isLoading]);
 
+  const scheduleSmartReminders = useCallback(async () => {
+    if (Platform.OS === 'web') return;
+    
+    try {
+      // Cancel existing notifications
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      
+      // Schedule daily check-in reminder
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🌟 Daily Life Check-in',
+          body: 'Take a moment to reflect on your growth journey today!',
+          data: { type: 'daily_checkin' },
+        },
+        trigger: {
+          hour: 9,
+          minute: 0,
+          repeats: true,
+        } as any,
+      });
+      
+      // Schedule evening reflection reminder
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🌅 Evening Reflection',
+          body: 'How did you grow today? Log your progress and celebrate wins!',
+          data: { type: 'evening_reflection' },
+        },
+        trigger: {
+          hour: 20,
+          minute: 0,
+          repeats: true,
+        } as any,
+      });
+      
+      console.log('Smart reminders scheduled successfully');
+    } catch (error) {
+      console.error('Error scheduling notifications:', error);
+    }
+  }, []);
+
   const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
     try {
       if (isAuthenticated) {
@@ -220,12 +263,37 @@ export const [UserProvider, useUser] = createContextHook(() => {
     }
   }, [isAuthenticated]);
 
-  const updatePreferences = useCallback((preferences: Partial<UserProfile['preferences']>) => {
+  const updatePreferences = useCallback(async (preferences: Partial<UserProfile['preferences']>) => {
     setUser(prevUser => ({
       ...prevUser,
       preferences: { ...prevUser.preferences, ...preferences }
     }));
-  }, []);
+    
+    // Handle notification permission changes
+    if (preferences.notifications !== undefined) {
+      if (preferences.notifications && Platform.OS !== 'web') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert(
+            'Notifications Disabled',
+            'Please enable notifications in your device settings to receive reminders.',
+            [{ text: 'OK' }]
+          );
+          // Revert the preference if permission denied
+          setUser(prevUser => ({
+            ...prevUser,
+            preferences: { ...prevUser.preferences, notifications: false }
+          }));
+        } else {
+          // Schedule daily reminder
+          await scheduleSmartReminders();
+        }
+      } else if (!preferences.notifications && Platform.OS !== 'web') {
+        // Cancel all notifications
+        await Notifications.cancelAllScheduledNotificationsAsync();
+      }
+    }
+  }, [scheduleSmartReminders]);
 
   const updateStats = useCallback((stats: Partial<UserProfile['stats']>) => {
     setUser(prevUser => ({

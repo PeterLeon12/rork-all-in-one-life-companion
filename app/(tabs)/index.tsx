@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useMemo, useCallback } from 'react';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
   Heart, 
@@ -21,6 +21,7 @@ import {
   HandHeart
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useCategories } from '@/contexts/CategoryContext';
 import { useUser } from '@/contexts/UserContext';
 
@@ -408,7 +409,7 @@ export default function HomeScreen() {
     return selectedInsight;
   }, [scores, activities, overallScore]);
   
-  const renderCategoryCard = (category: CategoryCard) => {
+  const renderCategoryCard = useCallback((category: CategoryCard) => {
     const IconComponent = category.icon;
     const categoryScore = getCategoryProgress(category.id);
     
@@ -436,9 +437,14 @@ export default function HomeScreen() {
         </LinearGradient>
       </TouchableOpacity>
     );
-  };
+  }, [getCategoryProgress, router]);
 
-  const handleQuickAction = (action: any) => {
+  const handleQuickAction = useCallback(async (action: any) => {
+    // Add haptic feedback for better UX
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    
     if (action.title === 'Daily Check-in') {
       // Add a daily check-in activity
       addActivity({
@@ -451,9 +457,9 @@ export default function HomeScreen() {
     } else if (action.action) {
       action.action();
     }
-  };
+  }, [addActivity]);
 
-  const renderQuickAction = (action: any, index: number) => {
+  const renderQuickAction = useCallback((action: any, index: number) => {
     const IconComponent = action.icon;
     
     return (
@@ -469,7 +475,7 @@ export default function HomeScreen() {
         <Text style={styles.quickActionText}>{action.title}</Text>
       </TouchableOpacity>
     );
-  };
+  }, [handleQuickAction]);
 
   return (
     <View style={styles.backgroundContainer}>
@@ -550,6 +556,29 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>Life Areas</Text>
         <View style={styles.categoriesContainer}>
           {categories.map(renderCategoryCard)}
+        </View>
+      </View>
+
+      {/* Daily Goals */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Today's Focus</Text>
+        <View style={styles.dailyGoalsCard}>
+          <View style={styles.goalItem}>
+            <View style={styles.goalCheckbox}>
+              <Text style={styles.goalCheckmark}>✓</Text>
+            </View>
+            <Text style={styles.goalText}>Complete morning routine</Text>
+          </View>
+          <View style={styles.goalItem}>
+            <View style={[styles.goalCheckbox, styles.goalCheckboxEmpty]}>
+            </View>
+            <Text style={styles.goalText}>30-minute learning session</Text>
+          </View>
+          <View style={styles.goalItem}>
+            <View style={[styles.goalCheckbox, styles.goalCheckboxEmpty]}>
+            </View>
+            <Text style={styles.goalText}>Connect with a friend</Text>
+          </View>
         </View>
       </View>
 
@@ -809,5 +838,49 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  dailyGoalsCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    marginHorizontal: 24,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  goalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F3F4',
+  },
+  goalCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#00B894',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  goalCheckboxEmpty: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#E9ECEF',
+  },
+  goalCheckmark: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  goalText: {
+    fontSize: 16,
+    color: '#2C3E50',
+    flex: 1,
   },
 });
