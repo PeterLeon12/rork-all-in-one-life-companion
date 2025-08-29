@@ -157,6 +157,27 @@ const quickActions = [
   { title: 'Quick Journal', icon: BookOpen, color: '#FFD93D' }
 ];
 
+// Helper function to get readable category names
+const getCategoryName = (key: string): string => {
+  const nameMap: Record<string, string> = {
+    health: 'Health',
+    fitness: 'Fitness', 
+    wealth: 'Wealth',
+    relationships: 'Relationships',
+    confidence: 'Confidence',
+    learning: 'Learning',
+    productivity: 'Productivity',
+    mindfulness: 'Mindfulness',
+    creativity: 'Creativity',
+    energy: 'Energy',
+    lifestyle: 'Lifestyle',
+    breakFree: 'Break Free',
+    travel: 'Travel',
+    community: 'Community'
+  };
+  return nameMap[key] || key;
+};
+
 export default function HomeScreen() {
   const { getOverallScore, getCategoryProgress, scores, activities } = useCategories();
   
@@ -217,28 +238,7 @@ export default function HomeScreen() {
     // Select insight based on day of year to ensure variety
     const selectedInsight = insightTypes[dayOfYear % insightTypes.length];
     return selectedInsight;
-  }, [scores, activities, overallScore, getCategoryProgress]);
-  
-  // Helper function to get readable category names
-  const getCategoryName = (key: string): string => {
-    const nameMap: Record<string, string> = {
-      health: 'Health',
-      fitness: 'Fitness', 
-      wealth: 'Wealth',
-      relationships: 'Relationships',
-      confidence: 'Confidence',
-      learning: 'Learning',
-      productivity: 'Productivity',
-      mindfulness: 'Mindfulness',
-      creativity: 'Creativity',
-      energy: 'Energy',
-      lifestyle: 'Lifestyle',
-      breakFree: 'Break Free',
-      travel: 'Travel',
-      community: 'Community'
-    };
-    return nameMap[key] || key;
-  };
+  }, [scores, activities, overallScore]);
   
   const renderCategoryCard = (category: CategoryCard) => {
     const IconComponent = category.icon;
