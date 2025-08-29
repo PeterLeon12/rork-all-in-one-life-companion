@@ -3,9 +3,10 @@ import { publicProcedure } from '../../../create-context';
 import { TRPCError } from '@trpc/server';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import fs from 'fs';
+import path from 'path';
 
-// Simple in-memory user storage (replace with database in production)
-const users: Array<{
+export interface User {
   id: string;
   name: string;
   email: string;
@@ -24,15 +25,66 @@ const users: Array<{
     achievementsUnlocked: number;
     goalsCompleted: number;
   };
-  achievements: Array<{
+  achievements: {
     id: string;
     title: string;
     description: string;
     icon: string;
     unlockedAt: string;
     category: string;
-  }>;
-}> = [];
+  }[];
+}
+
+// File-based user storage
+const USERS_FILE = path.join(process.cwd(), 'users.json');
+
+// Load users from file
+const loadUsers = (): User[] => {
+  try {
+    if (fs.existsSync(USERS_FILE)) {
+      const data = fs.readFileSync(USERS_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error loading users:', error);
+  }
+  return [];
+};
+
+// Save users to file
+const saveUsers = (users: User[]) => {
+  try {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+  } catch (error) {
+    console.error('Error saving users:', error);
+  }
+};
+
+// Get users (loads from file each time to ensure fresh data)
+export const getUsers = (): User[] => {
+  return loadUsers();
+};
+
+// Add or update user
+export const saveUser = (user: User) => {
+  const users = loadUsers();
+  const existingIndex = users.findIndex(u => u.id === user.id);
+  
+  if (existingIndex >= 0) {
+    users[existingIndex] = user;
+  } else {
+    users.push(user);
+  }
+  
+  saveUsers(users);
+};
+
+// Remove user
+export const removeUser = (userId: string) => {
+  const users = loadUsers();
+  const filteredUsers = users.filter(u => u.id !== userId);
+  saveUsers(filteredUsers);
+};
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -48,6 +100,7 @@ export const registerProcedure = publicProcedure
     const { name, email, password } = input;
 
     // Check if user already exists
+    const users = getUsers();
     const existingUser = users.find(user => user.email === email);
     if (existingUser) {
       throw new TRPCError({
@@ -82,7 +135,7 @@ export const registerProcedure = publicProcedure
       achievements: []
     };
 
-    users.push(newUser);
+    saveUser(newUser);
 
     // Generate JWT token
     const token = jwt.sign(
@@ -101,5 +154,3 @@ export const registerProcedure = publicProcedure
     };
   });
 
-// Export users array for other routes to access
-export { users };

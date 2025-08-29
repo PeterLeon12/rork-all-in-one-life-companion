@@ -3,7 +3,7 @@ import { publicProcedure } from '../../../create-context';
 import { TRPCError } from '@trpc/server';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { users } from '../register/route';
+import { getUsers } from '../register/route';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -18,6 +18,7 @@ export const loginProcedure = publicProcedure
     const { email, password } = input;
 
     // Find user by email
+    const users = getUsers();
     const user = users.find(u => u.email === email);
     if (!user) {
       throw new TRPCError({
