@@ -10,7 +10,9 @@ export default function AuthScreen() {
   const [name, setName] = useState<string>('');
   const [emailOrUsername, setEmailOrUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { signIn } = useUser();
 
@@ -37,15 +39,27 @@ export default function AuthScreen() {
       }
     }
 
-    if (isLogin && !password.trim()) {
+    if (!password.trim()) {
       Alert.alert('Password Required', 'Please enter your password.');
       return;
+    }
+
+    if (!isLogin) {
+      if (password.length < 6) {
+        Alert.alert('Password Too Short', 'Password must be at least 6 characters long.');
+        return;
+      }
+      
+      if (password !== confirmPassword) {
+        Alert.alert('Passwords Don&apos;t Match', 'Please make sure both passwords are identical.');
+        return;
+      }
     }
 
     setIsLoading(true);
     
     try {
-      const result = await signIn(name.trim(), emailOrUsername.trim(), isLogin ? password : undefined);
+      const result = await signIn(name.trim(), emailOrUsername.trim(), password, isLogin);
       
       if (result.success) {
         router.replace('/(tabs)');
@@ -63,7 +77,9 @@ export default function AuthScreen() {
   const toggleAuthMode = () => {
     setIsLogin(!isLogin);
     setPassword('');
+    setConfirmPassword('');
     setShowPassword(false);
+    setShowConfirmPassword(false);
     // Clear fields when switching modes
     setEmailOrUsername('');
     setName('');
@@ -135,26 +151,52 @@ export default function AuthScreen() {
                 />
               </View>
 
-              {isLogin && (
+              <View style={styles.inputContainer}>
+                <View style={styles.inputIcon}>
+                  <Lock size={20} color="#667eea" />
+                </View>
+                <TextInput
+                  style={styles.input}
+                  placeholder={isLogin ? "Your password" : "Create a password"}
+                  placeholderTextColor="rgba(102, 126, 234, 0.6)"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} color="#667eea" />
+                  ) : (
+                    <Eye size={20} color="#667eea" />
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {!isLogin && (
                 <View style={styles.inputContainer}>
                   <View style={styles.inputIcon}>
                     <Lock size={20} color="#667eea" />
                   </View>
                   <TextInput
                     style={styles.input}
-                    placeholder="Your password"
+                    placeholder="Confirm your password"
                     placeholderTextColor="rgba(102, 126, 234, 0.6)"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showConfirmPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
                   />
                   <TouchableOpacity
                     style={styles.eyeIcon}
-                    onPress={() => setShowPassword(!showPassword)}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showPassword ? (
+                    {showConfirmPassword ? (
                       <EyeOff size={20} color="#667eea" />
                     ) : (
                       <Eye size={20} color="#667eea" />
@@ -201,13 +243,20 @@ export default function AuthScreen() {
 
             {!isLogin && (
               <View style={styles.features}>
-                <Text style={styles.featuresTitle}>What you'll discover:</Text>
+                <Text style={styles.featuresTitle}>What you&apos;ll discover:</Text>
                 <View style={styles.featuresList}>
                   <Text style={styles.featureItem}>🎯 Track progress across 14 life areas</Text>
                   <Text style={styles.featureItem}>🔗 See how your actions interconnect</Text>
                   <Text style={styles.featureItem}>🏆 Unlock achievements as you grow</Text>
                   <Text style={styles.featureItem}>📈 Get personalized insights daily</Text>
                   <Text style={styles.featureItem}>☁️ Sync across all your devices</Text>
+                </View>
+                
+                <View style={styles.privacyInfo}>
+                  <Text style={styles.privacyTitle}>🔒 Your Data Privacy</Text>
+                  <Text style={styles.privacyText}>
+                    Your account data is securely stored and encrypted. Only you have access to your personal progress and achievements.
+                  </Text>
                 </View>
               </View>
             )}
@@ -341,5 +390,24 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
     marginBottom: 8,
     lineHeight: 20,
+  },
+  privacyInfo: {
+    marginTop: 24,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+  },
+  privacyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 8,
+  },
+  privacyText: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });

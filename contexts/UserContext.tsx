@@ -302,17 +302,16 @@ export const [UserProvider, useUser] = createContextHook(() => {
     return [];
   }, [user.achievements]);
 
-  const signIn = useCallback(async (name: string, email: string, password?: string) => {
+  const signIn = useCallback(async (name: string, email: string, password: string, isLogin?: boolean) => {
     try {
       let result;
       
-      if (password) {
+      if (isLogin === true) {
         // Login with existing account
         result = await trpcClient.auth.login.mutate({ email, password });
       } else {
-        // Register new account (generate a default password for now)
-        const defaultPassword = 'password123';
-        result = await trpcClient.auth.register.mutate({ name, email, password: defaultPassword });
+        // Register new account
+        result = await trpcClient.auth.register.mutate({ name, email, password });
       }
       
       // Store the JWT token
