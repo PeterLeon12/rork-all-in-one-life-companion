@@ -10,16 +10,16 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 export const loginProcedure = publicProcedure
   .input(
     z.object({
-      emailOrUsername: z.string().min(1, 'Email or username is required'),
+      email: z.string().email('Invalid email address'),
       password: z.string().min(1, 'Password is required'),
     })
   )
   .mutation(async ({ input }) => {
-    const { emailOrUsername, password } = input;
+    const { email, password } = input;
 
-    // Find user by email or username (for now, we'll treat it as email since we don't have username field)
+    // Find user by email
     const users = getUsers();
-    const user = users.find(u => u.email === emailOrUsername || u.name === emailOrUsername);
+    const user = users.find(u => u.email === email);
     if (!user) {
       throw new TRPCError({
         code: 'UNAUTHORIZED',
