@@ -22,6 +22,7 @@ import {
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useCategories } from '@/contexts/CategoryContext';
+import { useUser } from '@/contexts/UserContext';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 64) / 2;
@@ -244,30 +245,31 @@ const getCategoryName = (key: string): string => {
 };
 
 // Helper function to get time-based greeting
-const getTimeBasedGreeting = () => {
+const getTimeBasedGreeting = (userName: string) => {
   const hour = new Date().getHours();
+  const firstName = userName.split(' ')[0];
   
   if (hour >= 5 && hour < 12) {
     return {
-      greeting: 'Good morning! ☀️',
+      greeting: `Good morning, ${firstName}! ☀️`,
       subtitle: 'Ready to seize the day?',
       timeOfDay: 'morning'
     };
   } else if (hour >= 12 && hour < 17) {
     return {
-      greeting: 'Good afternoon! 🌤️',
+      greeting: `Good afternoon, ${firstName}! 🌤️`,
       subtitle: 'How\'s your day going?',
       timeOfDay: 'afternoon'
     };
   } else if (hour >= 17 && hour < 21) {
     return {
-      greeting: 'Good evening! 🌅',
+      greeting: `Good evening, ${firstName}! 🌅`,
       subtitle: 'Time to wind down and reflect?',
       timeOfDay: 'evening'
     };
   } else {
     return {
-      greeting: 'Good night! 🌙',
+      greeting: `Good night, ${firstName}! 🌙`,
       subtitle: 'Rest well, tomorrow awaits!',
       timeOfDay: 'night'
     };
@@ -341,11 +343,12 @@ const getPersonalizedGreeting = (activities: any[], scores: any, timeOfDay: stri
 
 export default function HomeScreen() {
   const { getOverallScore, getCategoryProgress, scores, activities, addActivity } = useCategories();
+  const { user, getInitials } = useUser();
   
   const overallScore = getOverallScore();
   
   // Get dynamic greeting based on time and user activity
-  const timeGreeting = getTimeBasedGreeting();
+  const timeGreeting = getTimeBasedGreeting(user.name);
   const personalizedMessage = getPersonalizedGreeting(activities, scores, timeGreeting.timeOfDay);
   
   // Generate personalized insight based on user data
@@ -485,9 +488,13 @@ export default function HomeScreen() {
           <Text style={styles.subtitle}>{timeGreeting.subtitle}</Text>
           <Text style={styles.personalizedMessage}>{personalizedMessage}</Text>
         </View>
-        <TouchableOpacity style={styles.profileButton}>
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={() => router.push('/profile')}
+          activeOpacity={0.8}
+        >
           <View style={styles.profileAvatar}>
-            <Text style={styles.profileInitial}>U</Text>
+            <Text style={styles.profileInitial}>{getInitials()}</Text>
           </View>
         </TouchableOpacity>
       </View>

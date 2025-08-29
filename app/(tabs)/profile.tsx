@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Switch } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Switch, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
   User, 
@@ -15,8 +15,12 @@ import {
   Calendar,
   Moon,
   Smartphone,
-  Lock
+  Lock,
+  LogOut
 } from 'lucide-react-native';
+import { useUser, useUserAchievements } from '@/contexts/UserContext';
+import { useCategories } from '@/contexts/CategoryContext';
+import { router } from 'expo-router';
 
 interface MenuItem {
   id: string;
@@ -28,104 +32,191 @@ interface MenuItem {
   onPress?: () => void;
 }
 
-const profileStats = [
-  { label: 'Goals Completed', value: '47', icon: Target, color: '#4ECDC4' },
-  { label: 'Day Streak', value: '28', icon: Calendar, color: '#FF6B6B' },
-  { label: 'Achievements', value: '12', icon: Award, color: '#FFD93D' }
-];
 
-const menuSections = [
-  {
-    title: 'Account',
-    items: [
-      {
-        id: 'edit-profile',
-        title: 'Edit Profile',
-        subtitle: 'Update your personal information',
-        icon: Edit3,
-        type: 'navigation'
-      },
-      {
-        id: 'achievements',
-        title: 'Achievements',
-        subtitle: 'View your accomplishments',
-        icon: Award,
-        type: 'navigation'
-      }
-    ]
-  },
-  {
-    title: 'Preferences',
-    items: [
-      {
-        id: 'notifications',
-        title: 'Push Notifications',
-        subtitle: 'Get reminders and updates',
-        icon: Bell,
-        type: 'toggle',
-        value: true
-      },
-      {
-        id: 'dark-mode',
-        title: 'Dark Mode',
-        subtitle: 'Switch to dark theme',
-        icon: Moon,
-        type: 'toggle',
-        value: false
-      }
-    ]
-  },
-  {
-    title: 'Privacy & Security',
-    items: [
-      {
-        id: 'privacy',
-        title: 'Privacy Settings',
-        subtitle: 'Control your data and privacy',
-        icon: Shield,
-        type: 'navigation'
-      },
-      {
-        id: 'security',
-        title: 'Security',
-        subtitle: 'Manage your account security',
-        icon: Lock,
-        type: 'navigation'
-      }
-    ]
-  },
-  {
-    title: 'Support',
-    items: [
-      {
-        id: 'help',
-        title: 'Help & Support',
-        subtitle: 'Get help and contact support',
-        icon: HelpCircle,
-        type: 'navigation'
-      },
-      {
-        id: 'rate',
-        title: 'Rate the App',
-        subtitle: 'Share your feedback',
-        icon: Star,
-        type: 'action'
-      }
-    ]
-  }
-];
+
+
 
 export default function ProfileScreen() {
-  const [toggleStates, setToggleStates] = React.useState<Record<string, boolean>>({
-    notifications: true,
-    'dark-mode': false
-  });
+  const { user, updatePreferences, signOut, getJoinDuration } = useUser();
+  const { unlockedAchievements, totalAchievements } = useUserAchievements();
+  const { activities } = useCategories();
 
-  const handleToggle = (id: string) => {
-    setToggleStates(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
+  const profileStats = [
+    { label: 'Goals Completed', value: user.stats.goalsCompleted.toString(), icon: Target, color: '#4ECDC4' },
+    { label: 'Day Streak', value: user.stats.currentStreak.toString(), icon: Calendar, color: '#FF6B6B' },
+    { label: 'Achievements', value: unlockedAchievements.length.toString(), icon: Award, color: '#FFD93D' }
+  ];
+
+  const menuSections = [
+    {
+      title: 'Account',
+      items: [
+        {
+          id: 'edit-profile',
+          title: 'Edit Profile',
+          subtitle: 'Update your personal information',
+          icon: Edit3,
+          type: 'navigation',
+          onPress: () => handleEditProfile()
+        },
+        {
+          id: 'achievements',
+          title: 'Achievements',
+          subtitle: `${unlockedAchievements.length}/${totalAchievements} unlocked`,
+          icon: Award,
+          type: 'navigation',
+          onPress: () => handleViewAchievements()
+        }
+      ]
+    },
+    {
+      title: 'Preferences',
+      items: [
+        {
+          id: 'notifications',
+          title: 'Push Notifications',
+          subtitle: 'Get reminders and updates',
+          icon: Bell,
+          type: 'toggle',
+          value: user.preferences.notifications,
+          onPress: () => handleToggle('notifications')
+        },
+        {
+          id: 'dark-mode',
+          title: 'Dark Mode',
+          subtitle: 'Switch to dark theme',
+          icon: Moon,
+          type: 'toggle',
+          value: user.preferences.darkMode,
+          onPress: () => handleToggle('darkMode')
+        }
+      ]
+    },
+    {
+      title: 'Privacy & Security',
+      items: [
+        {
+          id: 'privacy',
+          title: 'Privacy Settings',
+          subtitle: 'Control your data and privacy',
+          icon: Shield,
+          type: 'navigation',
+          onPress: () => handlePrivacySettings()
+        },
+        {
+          id: 'security',
+          title: 'Security',
+          subtitle: 'Manage your account security',
+          icon: Lock,
+          type: 'navigation',
+          onPress: () => handleSecuritySettings()
+        }
+      ]
+    },
+    {
+      title: 'Support',
+      items: [
+        {
+          id: 'help',
+          title: 'Help & Support',
+          subtitle: 'Get help and contact support',
+          icon: HelpCircle,
+          type: 'navigation',
+          onPress: () => handleHelpSupport()
+        },
+        {
+          id: 'rate',
+          title: 'Rate the App',
+          subtitle: 'Share your feedback',
+          icon: Star,
+          type: 'action',
+          onPress: () => handleRateApp()
+        },
+        {
+          id: 'sign-out',
+          title: 'Sign Out',
+          subtitle: 'Sign out of your account',
+          icon: LogOut,
+          type: 'action',
+          onPress: () => handleSignOut()
+        }
+      ]
+    }
+  ];
+
+  const handleToggle = (preference: keyof typeof user.preferences) => {
+    updatePreferences({
+      [preference]: !user.preferences[preference]
+    });
+  };
+
+  const handleEditProfile = () => {
+    Alert.alert(
+      'Edit Profile',
+      'Profile editing feature coming soon!',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleViewAchievements = () => {
+    Alert.alert(
+      'Achievements',
+      `You've unlocked ${unlockedAchievements.length} out of ${totalAchievements} achievements!\n\nRecent achievements:\n${unlockedAchievements.slice(0, 3).map(a => `${a.icon} ${a.title}`).join('\n')}`,
+      [{ text: 'Awesome!' }]
+    );
+  };
+
+  const handlePrivacySettings = () => {
+    Alert.alert(
+      'Privacy Settings',
+      'Privacy settings feature coming soon!',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleSecuritySettings = () => {
+    Alert.alert(
+      'Security Settings',
+      'Security settings feature coming soon!',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleHelpSupport = () => {
+    Alert.alert(
+      'Help & Support',
+      'Need help? Contact us at support@lifemastery.app',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleRateApp = () => {
+    Alert.alert(
+      'Rate Life Mastery',
+      'Thank you for using Life Mastery! Your feedback helps us improve.',
+      [
+        { text: 'Maybe Later', style: 'cancel' },
+        { text: 'Rate Now', onPress: () => console.log('Opening app store...') }
+      ]
+    );
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out? Your progress will be saved.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Sign Out', 
+          style: 'destructive',
+          onPress: () => {
+            signOut();
+            router.replace('/');
+          }
+        }
+      ]
+    );
   };
 
   const renderProfileStat = (stat: any, index: number) => {
@@ -167,10 +258,10 @@ export default function ProfileScreen() {
         <View style={styles.menuItemRight}>
           {item.type === 'toggle' ? (
             <Switch
-              value={toggleStates[item.id] || false}
-              onValueChange={() => handleToggle(item.id)}
+              value={item.value || false}
+              onValueChange={item.onPress}
               trackColor={{ false: '#E9ECEF', true: '#667eea' }}
-              thumbColor={toggleStates[item.id] ? '#ffffff' : '#ffffff'}
+              thumbColor={item.value ? '#ffffff' : '#ffffff'}
             />
           ) : (
             <ChevronRight size={20} color="#BDC3C7" />
@@ -222,9 +313,9 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               </View>
               
-              <Text style={styles.userName}>John Doe</Text>
-              <Text style={styles.userEmail}>john.doe@example.com</Text>
-              <Text style={styles.joinDate}>Member since January 2024</Text>
+              <Text style={styles.userName}>{user.name}</Text>
+              <Text style={styles.userEmail}>{user.email}</Text>
+              <Text style={styles.joinDate}>Member for {getJoinDuration()}</Text>
             </View>
           </LinearGradient>
         </View>
