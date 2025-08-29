@@ -1,72 +1,95 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from 'expo-router';
 import { 
   DollarSign, 
   TrendingUp, 
   PiggyBank, 
-  CreditCard,
   Target,
-  Briefcase,
-  BookOpen,
-  Award,
   Plus,
   ArrowUpRight,
   ArrowDownRight,
-  MessageCircle
+  MessageCircle,
+  Wallet
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
 const financialMetrics = [
-  { label: 'Net Worth', value: '$45,230', change: '+12.5%', trend: 'up', color: '#4ECDC4' },
-  { label: 'Monthly Savings', value: '$1,250', change: '+8.2%', trend: 'up', color: '#FFD93D' },
-  { label: 'Investment Portfolio', value: '$28,450', change: '-2.1%', trend: 'down', color: '#FF6B6B' },
-  { label: 'Emergency Fund', value: '$8,500', change: '+15.3%', trend: 'up', color: '#6C5CE7' }
+  { label: 'Net Worth', value: '$45,230', change: '+12.5%', trend: 'up' as const },
+  { label: 'Monthly Savings', value: '$1,250', change: '+8.2%', trend: 'up' as const },
+  { label: 'Investments', value: '$28,450', change: '-2.1%', trend: 'down' as const },
+  { label: 'Emergency Fund', value: '$8,500', change: '+15.3%', trend: 'up' as const }
 ];
 
-const quickActions = [
-  { title: 'Add Expense', icon: CreditCard, color: '#FF6B6B', description: 'Track spending' },
-  { title: 'Investment', icon: TrendingUp, color: '#4ECDC4', description: 'Portfolio update' },
-  { title: 'Budget Review', icon: Target, color: '#FFD93D', description: 'Monthly check' },
-  { title: 'Career Goals', icon: Briefcase, color: '#6C5CE7', description: 'Plan growth' }
-];
-
-const wealthPrograms = [
+const wealthGoals = [
   {
-    title: 'Emergency Fund Builder',
-    description: 'Build 6 months of expenses in savings',
+    id: 1,
+    title: 'Emergency Fund',
+    description: '6 months of expenses',
     progress: 68,
-    target: '$12,000',
-    current: '$8,160',
+    target: 12000,
+    current: 8160,
     color: '#4ECDC4'
   },
   {
-    title: 'Investment Mastery',
-    description: 'Learn to build a diversified portfolio',
+    id: 2,
+    title: 'Investment Portfolio',
+    description: 'Diversified investments',
     progress: 34,
-    lessons: '12/35 lessons',
+    target: 50000,
+    current: 17000,
     color: '#6C5CE7'
   },
   {
-    title: 'Debt Freedom Plan',
-    description: 'Pay off all consumer debt',
+    id: 3,
+    title: 'Debt Payoff',
+    description: 'Credit card debt',
     progress: 78,
-    remaining: '$2,400',
+    target: 3000,
+    current: 660,
     color: '#FFD93D'
   }
 ];
 
 const recentTransactions = [
-  { type: 'income', description: 'Salary Deposit', amount: '+$4,200', date: 'Today', category: 'Income' },
-  { type: 'expense', description: 'Grocery Shopping', amount: '-$127.50', date: 'Yesterday', category: 'Food' },
-  { type: 'investment', description: 'S&P 500 ETF', amount: '-$500', date: '2 days ago', category: 'Investment' },
-  { type: 'income', description: 'Freelance Project', amount: '+$850', date: '3 days ago', category: 'Side Income' }
+  { id: 1, type: 'income', description: 'Salary Deposit', amount: 4200, date: 'Today' },
+  { id: 2, type: 'expense', description: 'Grocery Shopping', amount: -127.50, date: 'Yesterday' },
+  { id: 3, type: 'investment', description: 'S&P 500 ETF', amount: -500, date: '2 days ago' },
+  { id: 4, type: 'income', description: 'Freelance Project', amount: 850, date: '3 days ago' }
 ];
 
 export default function WealthScreen() {
-  const renderMetricCard = (metric: any, index: number) => {
+  const [goals] = useState(wealthGoals);
+  const [transactions] = useState(recentTransactions);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(Math.abs(amount));
+  };
+
+  const handleAddGoal = () => {
+    Alert.alert(
+      'Add New Goal',
+      'This feature would allow you to create a new financial goal.',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleQuickAction = (action: string) => {
+    Alert.alert(
+      action,
+      `This would open the ${action.toLowerCase()} feature.`,
+      [{ text: 'OK' }]
+    );
+  };
+
+  const renderMetricCard = (metric: typeof financialMetrics[0], index: number) => {
     const TrendIcon = metric.trend === 'up' ? ArrowUpRight : ArrowDownRight;
     const trendColor = metric.trend === 'up' ? '#27AE60' : '#E74C3C';
     
@@ -82,47 +105,25 @@ export default function WealthScreen() {
     );
   };
 
-  const renderQuickAction = (action: any, index: number) => {
-    const IconComponent = action.icon;
+  const renderGoal = (goal: typeof wealthGoals[0], index: number) => {
+    const progressWidth = (width - 72) * (goal.progress / 100);
     
     return (
-      <TouchableOpacity key={index} style={styles.quickActionCard} activeOpacity={0.8}>
-        <View style={[styles.quickActionIcon, { backgroundColor: action.color + '20' }]}>
-          <IconComponent size={24} color={action.color} />
-        </View>
-        <Text style={styles.quickActionTitle}>{action.title}</Text>
-        <Text style={styles.quickActionDescription}>{action.description}</Text>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderProgram = (program: any, index: number) => {
-    const progressWidth = (width - 72) * (program.progress / 100);
-    
-    return (
-      <View key={index} style={styles.programCard}>
-        <View style={styles.programHeader}>
-          <View style={styles.programInfo}>
-            <Text style={styles.programTitle}>{program.title}</Text>
-            <Text style={styles.programDescription}>{program.description}</Text>
-            <View style={styles.programDetails}>
-              {program.target && (
-                <Text style={styles.programDetail}>Target: {program.target}</Text>
-              )}
-              {program.current && (
-                <Text style={styles.programDetail}>Current: {program.current}</Text>
-              )}
-              {program.lessons && (
-                <Text style={styles.programDetail}>{program.lessons}</Text>
-              )}
-              {program.remaining && (
-                <Text style={styles.programDetail}>Remaining: {program.remaining}</Text>
-              )}
-            </View>
+      <TouchableOpacity 
+        key={goal.id} 
+        style={styles.goalCard}
+        onPress={() => Alert.alert(goal.title, `Current: ${formatCurrency(goal.current)}\nTarget: ${formatCurrency(goal.target)}`)}
+        activeOpacity={0.8}
+      >
+        <View style={styles.goalHeader}>
+          <View style={styles.goalInfo}>
+            <Text style={styles.goalTitle}>{goal.title}</Text>
+            <Text style={styles.goalDescription}>{goal.description}</Text>
+            <Text style={styles.goalDetail}>
+              {formatCurrency(goal.current)} of {formatCurrency(goal.target)}
+            </Text>
           </View>
-          <View style={styles.programProgress}>
-            <Text style={styles.progressPercentage}>{program.progress}%</Text>
-          </View>
+          <Text style={styles.progressPercentage}>{goal.progress}%</Text>
         </View>
         
         <View style={styles.progressBarContainer}>
@@ -130,16 +131,16 @@ export default function WealthScreen() {
             <View 
               style={[
                 styles.progressBarFill, 
-                { width: progressWidth, backgroundColor: program.color }
+                { width: progressWidth, backgroundColor: goal.color }
               ]} 
             />
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
-  const renderTransaction = (transaction: any, index: number) => {
+  const renderTransaction = (transaction: typeof recentTransactions[0]) => {
     const getTransactionIcon = () => {
       switch (transaction.type) {
         case 'income': return ArrowUpRight;
@@ -160,17 +161,20 @@ export default function WealthScreen() {
 
     const IconComponent = getTransactionIcon();
     const color = getTransactionColor();
+    const sign = transaction.amount > 0 ? '+' : '';
     
     return (
-      <View key={index} style={styles.transactionItem}>
+      <View key={transaction.id} style={styles.transactionItem}>
         <View style={[styles.transactionIcon, { backgroundColor: color + '20' }]}>
           <IconComponent size={16} color={color} />
         </View>
         <View style={styles.transactionInfo}>
           <Text style={styles.transactionDescription}>{transaction.description}</Text>
-          <Text style={styles.transactionCategory}>{transaction.category} • {transaction.date}</Text>
+          <Text style={styles.transactionDate}>{transaction.date}</Text>
         </View>
-        <Text style={[styles.transactionAmount, { color }]}>{transaction.amount}</Text>
+        <Text style={[styles.transactionAmount, { color }]}>
+          {sign}{formatCurrency(transaction.amount)}
+        </Text>
       </View>
     );
   };
@@ -195,7 +199,6 @@ export default function WealthScreen() {
         >
           <View style={styles.backgroundOverlay}>
             <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header Stats */}
         <View style={styles.headerCard}>
           <LinearGradient
             colors={['#4ECDC4', '#44A08D']}
@@ -204,10 +207,10 @@ export default function WealthScreen() {
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.headerContent}>
-              <DollarSign size={32} color="white" />
-              <Text style={styles.headerTitle}>Financial Health Score</Text>
-              <Text style={styles.headerScore}>78/100</Text>
-              <Text style={styles.headerSubtitle}>Good progress towards your goals</Text>
+              <Wallet size={32} color="white" />
+              <Text style={styles.headerTitle}>Wealth Overview</Text>
+              <Text style={styles.headerScore}>$45,230</Text>
+              <Text style={styles.headerSubtitle}>Net Worth</Text>
               
               <TouchableOpacity 
                 style={styles.aiChatButton}
@@ -215,70 +218,107 @@ export default function WealthScreen() {
                 activeOpacity={0.8}
               >
                 <MessageCircle size={20} color="white" />
-                <Text style={styles.aiChatButtonText}>Chat with AI Wealth Coach</Text>
+                <Text style={styles.aiChatButtonText}>Financial Coach</Text>
               </TouchableOpacity>
             </View>
           </LinearGradient>
         </View>
 
-        {/* Financial Metrics */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Financial Overview</Text>
+          <Text style={styles.sectionTitle}>Overview</Text>
           <View style={styles.metricsGrid}>
             {financialMetrics.map(renderMetricCard)}
           </View>
         </View>
 
-        {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActionsGrid}>
-            {quickActions.map(renderQuickAction)}
-          </View>
-        </View>
-
-        {/* Active Programs */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Active Goals</Text>
-            <TouchableOpacity style={styles.addButton}>
-              <Plus size={20} color="#667eea" />
+            <TouchableOpacity 
+              style={styles.quickActionCard} 
+              onPress={() => handleQuickAction('Add Transaction')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: '#4ECDC4' + '20' }]}>
+                <Plus size={24} color="#4ECDC4" />
+              </View>
+              <Text style={styles.quickActionTitle}>Add Transaction</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.quickActionCard} 
+              onPress={() => handleQuickAction('View Budget')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: '#6C5CE7' + '20' }]}>
+                <Target size={24} color="#6C5CE7" />
+              </View>
+              <Text style={styles.quickActionTitle}>Budget</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.quickActionCard} 
+              onPress={() => handleQuickAction('Investments')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: '#FFD93D' + '20' }]}>
+                <TrendingUp size={24} color="#FFD93D" />
+              </View>
+              <Text style={styles.quickActionTitle}>Investments</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.quickActionCard} 
+              onPress={() => handleQuickAction('Savings')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: '#FF6B6B' + '20' }]}>
+                <PiggyBank size={24} color="#FF6B6B" />
+              </View>
+              <Text style={styles.quickActionTitle}>Savings</Text>
             </TouchableOpacity>
           </View>
-          {wealthPrograms.map(renderProgram)}
         </View>
 
-        {/* Recent Transactions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Financial Goals</Text>
+            <TouchableOpacity style={styles.addButton} onPress={handleAddGoal}>
+              <Plus size={20} color="#4ECDC4" />
+            </TouchableOpacity>
+          </View>
+          {goals.map(renderGoal)}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recent Activity</Text>
           <View style={styles.transactionsCard}>
-            {recentTransactions.map(renderTransaction)}
+            {transactions.map(renderTransaction)}
           </View>
         </View>
 
-        {/* Monthly Insights */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Month&apos;s Insights</Text>
-          <View style={styles.insightCard}>
-            <View style={styles.insightHeader}>
+          <Text style={styles.sectionTitle}>Monthly Summary</Text>
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryHeader}>
               <TrendingUp size={24} color="#4ECDC4" />
-              <Text style={styles.insightTitle}>Spending Analysis</Text>
+              <Text style={styles.summaryTitle}>This Month</Text>
             </View>
-            <Text style={styles.insightText}>
-              You&apos;ve saved 18% more than last month! Your biggest expense category was dining out at $340.
+            <Text style={styles.summaryText}>
+              You&apos;re on track with your financial goals. Keep up the great work!
             </Text>
-            <View style={styles.insightStats}>
-              <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>+18%</Text>
-                <Text style={styles.insightStatLabel}>Savings Rate</Text>
+            <View style={styles.summaryStats}>
+              <View style={styles.summaryStat}>
+                <Text style={styles.summaryStatValue}>+18%</Text>
+                <Text style={styles.summaryStatLabel}>Savings</Text>
               </View>
-              <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>$340</Text>
-                <Text style={styles.insightStatLabel}>Top Expense</Text>
+              <View style={styles.summaryStat}>
+                <Text style={styles.summaryStatValue}>$1,250</Text>
+                <Text style={styles.summaryStatLabel}>Saved</Text>
               </View>
-              <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>85%</Text>
-                <Text style={styles.insightStatLabel}>Budget Used</Text>
+              <View style={styles.summaryStat}>
+                <Text style={styles.summaryStatValue}>85%</Text>
+                <Text style={styles.summaryStatLabel}>Budget</Text>
               </View>
             </View>
           </View>
@@ -435,15 +475,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#2C3E50',
-    marginBottom: 4,
     textAlign: 'center',
   },
-  quickActionDescription: {
-    fontSize: 12,
-    color: '#7F8C8D',
-    textAlign: 'center',
-  },
-  programCard: {
+  goalCard: {
     backgroundColor: 'white',
     marginHorizontal: 24,
     marginBottom: 16,
@@ -455,39 +489,31 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  programHeader: {
+  goalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  programInfo: {
+  goalInfo: {
     flex: 1,
     marginRight: 16,
   },
-  programTitle: {
+  goalTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#2C3E50',
     marginBottom: 4,
   },
-  programDescription: {
+  goalDescription: {
     fontSize: 14,
     color: '#7F8C8D',
     lineHeight: 20,
     marginBottom: 8,
   },
-  programDetails: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  programDetail: {
+  goalDetail: {
     fontSize: 12,
     color: '#95A5A6',
-  },
-  programProgress: {
-    alignItems: 'center',
   },
   progressPercentage: {
     fontSize: 18,
@@ -542,7 +568,7 @@ const styles = StyleSheet.create({
     color: '#2C3E50',
     marginBottom: 2,
   },
-  transactionCategory: {
+  transactionDate: {
     fontSize: 12,
     color: '#7F8C8D',
   },
@@ -550,7 +576,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  insightCard: {
+  summaryCard: {
     backgroundColor: 'white',
     marginHorizontal: 24,
     borderRadius: 16,
@@ -561,36 +587,36 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  insightHeader: {
+  summaryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
   },
-  insightTitle: {
+  summaryTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#2C3E50',
     marginLeft: 12,
   },
-  insightText: {
+  summaryText: {
     fontSize: 14,
     color: '#7F8C8D',
     lineHeight: 20,
     marginBottom: 20,
   },
-  insightStats: {
+  summaryStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
-  insightStat: {
+  summaryStat: {
     alignItems: 'center',
   },
-  insightStatValue: {
+  summaryStatValue: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#2C3E50',
   },
-  insightStatLabel: {
+  summaryStatLabel: {
     fontSize: 12,
     color: '#7F8C8D',
     marginTop: 4,
