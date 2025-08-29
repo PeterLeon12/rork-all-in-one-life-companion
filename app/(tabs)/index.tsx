@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
@@ -158,9 +158,87 @@ const quickActions = [
 ];
 
 export default function HomeScreen() {
-  const { getOverallScore, getCategoryProgress } = useCategories();
+  const { getOverallScore, getCategoryProgress, scores, activities } = useCategories();
   
   const overallScore = getOverallScore();
+  
+  // Generate personalized insight based on user data
+  const todaysInsight = useMemo(() => {
+    const today = new Date();
+    const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Find lowest and highest scoring categories
+    const categoryEntries = Object.entries(scores).map(([key, value]) => ({ key, value }));
+    const lowestCategory = categoryEntries.reduce((min, curr) => curr.value < min.value ? curr : min);
+    const highestCategory = categoryEntries.reduce((max, curr) => curr.value > max.value ? curr : max);
+    
+    // Recent activities (last 3 days)
+    const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
+    const recentActivities = activities.filter(activity => activity.timestamp > threeDaysAgo);
+    
+    // Different types of insights that rotate based on day
+    const insightTypes = [
+      // Interconnection insights
+      {
+        title: "Interconnected Growth",
+        text: `Your ${getCategoryName(highestCategory.key)} strength (${highestCategory.value}%) can boost your ${getCategoryName(lowestCategory.key)}! Try activities that connect both areas.`,
+        actionText: "Explore Connections"
+      },
+      // Progress encouragement
+      {
+        title: "Progress Momentum",
+        text: recentActivities.length > 0 
+          ? `Great job! You've completed ${recentActivities.length} activities recently. Keep the momentum going!`
+          : "Ready for a fresh start? Small actions today create big changes tomorrow.",
+        actionText: "Take Action"
+      },
+      // Focus area suggestion
+      {
+        title: "Focus Opportunity",
+        text: `Your ${getCategoryName(lowestCategory.key)} area (${lowestCategory.value}%) has the most growth potential. Focus here for maximum impact!`,
+        actionText: `Improve ${getCategoryName(lowestCategory.key)}`
+      },
+      // Balance insight
+      {
+        title: "Life Balance",
+        text: overallScore >= 75 
+          ? "You're maintaining great balance across life areas! Consider exploring new challenges."
+          : "Growth happens when we balance multiple life areas. Your interconnected journey is unique!",
+        actionText: "View Progress"
+      },
+      // Streak motivation
+      {
+        title: "Daily Wisdom",
+        text: "Every small action ripples across your entire life. What you do in one area strengthens others!",
+        actionText: "Start Today"
+      }
+    ];
+    
+    // Select insight based on day of year to ensure variety
+    const selectedInsight = insightTypes[dayOfYear % insightTypes.length];
+    return selectedInsight;
+  }, [scores, activities, overallScore, getCategoryProgress]);
+  
+  // Helper function to get readable category names
+  const getCategoryName = (key: string): string => {
+    const nameMap: Record<string, string> = {
+      health: 'Health',
+      fitness: 'Fitness', 
+      wealth: 'Wealth',
+      relationships: 'Relationships',
+      confidence: 'Confidence',
+      learning: 'Learning',
+      productivity: 'Productivity',
+      mindfulness: 'Mindfulness',
+      creativity: 'Creativity',
+      energy: 'Energy',
+      lifestyle: 'Lifestyle',
+      breakFree: 'Break Free',
+      travel: 'Travel',
+      community: 'Community'
+    };
+    return nameMap[key] || key;
+  };
   
   const renderCategoryCard = (category: CategoryCard) => {
     const IconComponent = category.icon;
@@ -229,7 +307,14 @@ export default function HomeScreen() {
       </View>
 
       {/* Daily Insight */}
-      <View style={styles.insightCard}>
+      <TouchableOpacity 
+        style={styles.insightCard}
+        onPress={() => {
+          // Navigate to progress or relevant category
+          router.push('/progress');
+        }}
+        activeOpacity={0.9}
+      >
         <LinearGradient
           colors={['#667eea', '#764ba2']}
           style={styles.insightGradient}
@@ -238,13 +323,16 @@ export default function HomeScreen() {
         >
           <View style={styles.insightContent}>
             <Sparkles size={24} color="white" />
-            <Text style={styles.insightTitle}>Today's Insight</Text>
+            <Text style={styles.insightTitle}>{todaysInsight.title}</Text>
             <Text style={styles.insightText}>
-              Your actions in one area boost others! Exercise improves health, energy, and confidence.
+              {todaysInsight.text}
             </Text>
+            <View style={styles.insightAction}>
+              <Text style={styles.insightActionText}>{todaysInsight.actionText} →</Text>
+            </View>
           </View>
         </LinearGradient>
-      </View>
+      </TouchableOpacity>
 
       {/* Quick Actions */}
       <View style={styles.section}>
@@ -365,6 +453,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.9,
     lineHeight: 20,
+    marginBottom: 12,
+  },
+  insightAction: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  insightActionText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   section: {
     marginBottom: 32,
