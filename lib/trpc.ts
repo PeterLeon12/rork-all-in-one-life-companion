@@ -23,3 +23,6 @@ export const trpcClient = trpc.createClient({
     }),
   ],
 });
+
+// For non-React usage
+export const vanillaTrpcClient = trpcClient;
