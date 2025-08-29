@@ -243,10 +243,110 @@ const getCategoryName = (key: string): string => {
   return nameMap[key] || key;
 };
 
+// Helper function to get time-based greeting
+const getTimeBasedGreeting = () => {
+  const hour = new Date().getHours();
+  
+  if (hour >= 5 && hour < 12) {
+    return {
+      greeting: 'Good morning! ☀️',
+      subtitle: 'Ready to seize the day?',
+      timeOfDay: 'morning'
+    };
+  } else if (hour >= 12 && hour < 17) {
+    return {
+      greeting: 'Good afternoon! 🌤️',
+      subtitle: 'How\'s your day going?',
+      timeOfDay: 'afternoon'
+    };
+  } else if (hour >= 17 && hour < 21) {
+    return {
+      greeting: 'Good evening! 🌅',
+      subtitle: 'Time to wind down and reflect?',
+      timeOfDay: 'evening'
+    };
+  } else {
+    return {
+      greeting: 'Good night! 🌙',
+      subtitle: 'Rest well, tomorrow awaits!',
+      timeOfDay: 'night'
+    };
+  }
+};
+
+// Helper function to get personalized greeting based on activities
+const getPersonalizedGreeting = (activities: any[], scores: any, timeOfDay: string) => {
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const todayActivities = activities.filter(activity => activity.timestamp >= todayStart);
+  
+  // Find most active category today
+  const categoryActivity = todayActivities.reduce((acc: any, activity) => {
+    acc[activity.categoryId] = (acc[activity.categoryId] || 0) + 1;
+    return acc;
+  }, {});
+  
+  const mostActiveCategory = Object.entries(categoryActivity)
+    .sort(([,a]: any, [,b]: any) => b - a)[0];
+  
+  // Find highest scoring category
+  const highestCategory = Object.entries(scores)
+    .sort(([,a]: any, [,b]: any) => b - a)[0];
+  
+  // Generate contextual messages based on time and activity
+  const contextualMessages = {
+    morning: [
+      todayActivities.length > 0 
+        ? `Great start! You've already completed ${todayActivities.length} activities today.`
+        : "A fresh day full of possibilities awaits!",
+      mostActiveCategory 
+        ? `You're on fire with ${getCategoryName(mostActiveCategory[0])} today!`
+        : "What area of your life will you focus on first?",
+      highestCategory && (highestCategory[1] as number) > 80
+        ? `Your ${getCategoryName(highestCategory[0] as string)} strength is inspiring!`
+        : "Every small step counts toward your bigger goals."
+    ],
+    afternoon: [
+      todayActivities.length > 2
+        ? `Productive day! ${todayActivities.length} activities completed so far.`
+        : "Perfect time to tackle that next goal!",
+      mostActiveCategory
+        ? `Your ${getCategoryName(mostActiveCategory[0])} focus is paying off!`
+        : "The day is still young - what will you accomplish?",
+      "Midday energy is perfect for pushing forward!"
+    ],
+    evening: [
+      todayActivities.length > 0
+        ? `Well done today! You completed ${todayActivities.length} meaningful activities.`
+        : "It's never too late to make progress on your goals.",
+      "Time to reflect on today's wins and plan tomorrow.",
+      highestCategory
+        ? `Your ${getCategoryName(highestCategory[0])} progress shows real dedication!`
+        : "Every evening is a chance to prepare for tomorrow's success."
+    ],
+    night: [
+      todayActivities.length > 0
+        ? `Today brought ${todayActivities.length} steps forward in your journey.`
+        : "Tomorrow is a new opportunity to grow and thrive.",
+      "Rest well - your mind and body deserve it.",
+      "Peaceful nights lead to powerful mornings."
+    ]
+  };
+  
+  const messages = contextualMessages[timeOfDay as keyof typeof contextualMessages] || contextualMessages.morning;
+  const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+  
+  return randomMessage;
+};
+
 export default function HomeScreen() {
   const { getOverallScore, getCategoryProgress, scores, activities, addActivity } = useCategories();
   
   const overallScore = getOverallScore();
+  
+  // Get dynamic greeting based on time and user activity
+  const timeGreeting = getTimeBasedGreeting();
+  const personalizedMessage = getPersonalizedGreeting(activities, scores, timeGreeting.timeOfDay);
   
   // Generate personalized insight based on user data
   const todaysInsight = useMemo(() => {
@@ -380,9 +480,10 @@ export default function HomeScreen() {
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Good morning! 👋</Text>
-          <Text style={styles.subtitle}>Ready to grow today?</Text>
+        <View style={styles.greetingContainer}>
+          <Text style={styles.greeting}>{timeGreeting.greeting}</Text>
+          <Text style={styles.subtitle}>{timeGreeting.subtitle}</Text>
+          <Text style={styles.personalizedMessage}>{personalizedMessage}</Text>
         </View>
         <TouchableOpacity style={styles.profileButton}>
           <View style={styles.profileAvatar}>
@@ -487,6 +588,10 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 24,
   },
+  greetingContainer: {
+    flex: 1,
+    marginRight: 16,
+  },
   greeting: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -496,6 +601,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#7F8C8D',
     marginTop: 4,
+  },
+  personalizedMessage: {
+    fontSize: 14,
+    color: '#5D6D7E',
+    marginTop: 8,
+    lineHeight: 20,
+    fontStyle: 'italic',
   },
   profileButton: {
     padding: 4,
