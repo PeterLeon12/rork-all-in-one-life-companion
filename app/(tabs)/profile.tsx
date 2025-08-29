@@ -20,6 +20,7 @@ import {
 } from 'lucide-react-native';
 import { useUser, useUserAchievements } from '@/contexts/UserContext';
 import { useCategories } from '@/contexts/CategoryContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
 
 interface MenuItem {
@@ -40,6 +41,7 @@ export default function ProfileScreen() {
   const { user, updatePreferences, signOut, getJoinDuration } = useUser();
   const { unlockedAchievements, totalAchievements } = useUserAchievements();
   const { activities } = useCategories();
+  const { theme, isDarkMode, toggleTheme } = useTheme();
 
   const profileStats = [
     { label: 'Goals Completed', value: user.stats.goalsCompleted.toString(), icon: Target, color: '#4ECDC4' },
@@ -87,7 +89,7 @@ export default function ProfileScreen() {
           subtitle: 'Switch to dark theme',
           icon: Moon,
           type: 'toggle',
-          value: user.preferences.darkMode,
+          value: isDarkMode,
           onPress: () => handleToggle('darkMode')
         }
       ]
@@ -145,9 +147,16 @@ export default function ProfileScreen() {
   ];
 
   const handleToggle = (preference: keyof typeof user.preferences) => {
-    updatePreferences({
-      [preference]: !user.preferences[preference]
-    });
+    if (preference === 'darkMode') {
+      toggleTheme();
+      updatePreferences({
+        [preference]: !user.preferences[preference]
+      });
+    } else {
+      updatePreferences({
+        [preference]: !user.preferences[preference]
+      });
+    }
   };
 
   const handleEditProfile = () => {
@@ -250,7 +259,7 @@ export default function ProfileScreen() {
       >
         <View style={styles.menuItemLeft}>
           <View style={styles.menuIcon}>
-            <IconComponent size={20} color="#7F8C8D" />
+            <IconComponent size={20} color={theme.textSecondary} />
           </View>
           <View style={styles.menuContent}>
             <Text style={styles.menuTitle}>{item.title}</Text>
@@ -265,11 +274,14 @@ export default function ProfileScreen() {
             <Switch
               value={item.value || false}
               onValueChange={item.onPress}
-              trackColor={{ false: '#E9ECEF', true: '#667eea' }}
+              trackColor={{ 
+                false: isDarkMode ? '#333333' : '#E9ECEF', 
+                true: theme.primary 
+              }}
               thumbColor={item.value ? '#ffffff' : '#ffffff'}
             />
           ) : (
-            <ChevronRight size={20} color="#BDC3C7" />
+            <ChevronRight size={20} color={theme.textSecondary} />
           )}
         </View>
       </TouchableOpacity>
@@ -285,15 +297,20 @@ export default function ProfileScreen() {
     </View>
   );
 
+  const styles = createStyles(theme, isDarkMode);
+
   return (
-    <View style={styles.backgroundContainer}>
+    <View style={[styles.backgroundContainer, { backgroundColor: theme.background }]}>
       <LinearGradient
-        colors={['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe']}
+        colors={isDarkMode 
+          ? ['#1a1a2e', '#16213e', '#0f3460'] 
+          : ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe']
+        }
         style={styles.backgroundGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <View style={styles.backgroundOverlay}>
+        <View style={[styles.backgroundOverlay, { backgroundColor: isDarkMode ? 'rgba(18, 18, 18, 0.85)' : 'rgba(255, 255, 255, 0.85)' }]}>
           <View style={styles.container}>
             <ScrollView 
               style={styles.scrollView}
@@ -345,7 +362,7 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, isDarkMode: boolean) => StyleSheet.create({
   backgroundContainer: {
     flex: 1,
   },
@@ -354,7 +371,6 @@ const styles = StyleSheet.create({
   },
   backgroundOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
   },
   container: {
     flex: 1,
@@ -398,7 +414,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'white',
+    backgroundColor: theme.card,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -443,12 +459,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2C3E50',
+    color: theme.text,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#7F8C8D',
+    color: theme.textSecondary,
     textAlign: 'center',
   },
   menuSection: {
@@ -458,22 +474,22 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#7F8C8D',
+    color: theme.textSecondary,
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   sectionContent: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: theme.card,
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
+    shadowOpacity: isDarkMode ? 0.4 : 0.25,
     shadowRadius: 16,
     elevation: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: theme.border,
   },
   menuItem: {
     flexDirection: 'row',
@@ -482,7 +498,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F4',
+    borderBottomColor: theme.border,
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -493,7 +509,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: theme.surface,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -504,12 +520,12 @@ const styles = StyleSheet.create({
   menuTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#2C3E50',
+    color: theme.text,
     marginBottom: 2,
   },
   menuSubtitle: {
     fontSize: 14,
-    color: '#7F8C8D',
+    color: theme.textSecondary,
   },
   menuItemRight: {
     marginLeft: 16,
@@ -521,6 +537,6 @@ const styles = StyleSheet.create({
   },
   versionText: {
     fontSize: 14,
-    color: '#BDC3C7',
+    color: theme.textSecondary,
   },
 });
