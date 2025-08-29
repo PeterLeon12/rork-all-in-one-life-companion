@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
+import { trpcClient, setAuthToken, removeAuthToken, getStoredAuthToken } from '@/lib/trpc';
 
 export interface UserProfile {
   id: string;
@@ -149,15 +150,32 @@ export const [UserProvider, useUser] = createContextHook(() => {
   const loadUserData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const savedUser = await AsyncStorage.getItem('userProfile');
-      const authStatus = await AsyncStorage.getItem('isAuthenticated');
       
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      }
+      // Check if we have a stored auth token
+      const token = await getStoredAuthToken();
       
-      if (authStatus === 'true') {
-        setIsAuthenticated(true);
+      if (token) {
+        try {
+          // Try to get user profile from backend
+          const userProfile = await trpcClient.auth.getProfile.query();
+          setUser(userProfile);
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          // Token might be invalid, clear it
+          await removeAuthToken();
+          await AsyncStorage.removeItem('userProfile');
+          await AsyncStorage.removeItem('isAuthenticated');
+        }
+      } else {
+        // Fallback to local storage for backward compatibility
+        const savedUser = await AsyncStorage.getItem('userProfile');
+        const authStatus = await AsyncStorage.getItem('isAuthenticated');
+        
+        if (savedUser && authStatus === 'true') {
+          setUser(JSON.parse(savedUser));
+          setIsAuthenticated(true);
+        }
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -185,9 +203,22 @@ export const [UserProvider, useUser] = createContextHook(() => {
     }
   }, [saveUserData, isLoading]);
 
-  const updateProfile = useCallback((updates: Partial<UserProfile>) => {
-    setUser(prevUser => ({ ...prevUser, ...updates }));
-  }, []);
+  const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
+    try {
+      if (isAuthenticated) {
+        // Update on backend
+        const result = await trpcClient.auth.updateProfile.mutate(updates);
+        setUser(result.user);
+      } else {
+        // Update locally only
+        setUser(prevUser => ({ ...prevUser, ...updates }));
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      // Fallback to local update
+      setUser(prevUser => ({ ...prevUser, ...updates }));
+    }
+  }, [isAuthenticated]);
 
   const updatePreferences = useCallback((preferences: Partial<UserProfile['preferences']>) => {
     setUser(prevUser => ({
@@ -271,22 +302,37 @@ export const [UserProvider, useUser] = createContextHook(() => {
     return [];
   }, [user.achievements]);
 
-  const signIn = useCallback(async (name: string, email: string) => {
-    const newUser: UserProfile = {
-      ...defaultUser,
-      id: `user_${Date.now()}`,
-      name,
-      email,
-      joinDate: new Date().toISOString()
-    };
-    
-    setUser(newUser);
-    setIsAuthenticated(true);
+  const signIn = useCallback(async (name: string, email: string, password?: string) => {
+    try {
+      let result;
+      
+      if (password) {
+        // Login with existing account
+        result = await trpcClient.auth.login.mutate({ email, password });
+      } else {
+        // Register new account (generate a default password for now)
+        const defaultPassword = 'password123';
+        result = await trpcClient.auth.register.mutate({ name, email, password: defaultPassword });
+      }
+      
+      // Store the JWT token
+      await setAuthToken(result.token);
+      
+      // Update local state
+      setUser(result.user);
+      setIsAuthenticated(true);
+      
+      return { success: true, message: result.message };
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      return { success: false, message: error.message || 'Authentication failed' };
+    }
   }, []);
 
   const signOut = useCallback(async () => {
     setIsAuthenticated(false);
     setUser(defaultUser);
+    await removeAuthToken();
     await AsyncStorage.removeItem('userProfile');
     await AsyncStorage.removeItem('isAuthenticated');
   }, []);

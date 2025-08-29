@@ -11,12 +11,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(tabs)';
+    const inAuthFlow = segments[0] === 'auth' || segments[0] === 'welcome';
 
     if (!isAuthenticated && inAuthGroup) {
       // User is not authenticated but trying to access protected routes
-      router.replace('/welcome');
-    } else if (isAuthenticated && !inAuthGroup) {
-      // User is authenticated but not in protected routes
+      router.replace('/auth');
+    } else if (isAuthenticated && inAuthFlow) {
+      // User is authenticated but in auth flow or at root
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, isLoading, segments]);

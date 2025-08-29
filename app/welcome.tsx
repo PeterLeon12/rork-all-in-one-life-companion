@@ -33,7 +33,7 @@ export default function WelcomeScreen() {
     
     try {
       await signIn(name.trim(), email.trim());
-      router.replace('/(tabs)');
+      router.replace('/auth');
     } catch (error) {
       Alert.alert('Error', 'Something went wrong. Please try again.');
       console.error('Sign in error:', error);
