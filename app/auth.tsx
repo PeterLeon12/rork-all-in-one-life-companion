@@ -8,41 +8,44 @@ import { router } from 'expo-router';
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState<boolean>(false);
   const [name, setName] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
+  const [emailOrUsername, setEmailOrUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { signIn } = useUser();
 
   const handleAuth = async () => {
-    if (!email.trim()) {
-      Alert.alert('Email Required', 'Please enter your email to continue.');
+    if (!emailOrUsername.trim()) {
+      Alert.alert(
+        isLogin ? 'Email/Username Required' : 'Email Required', 
+        isLogin ? 'Please enter your email or username.' : 'Please enter your email to continue.'
+      );
       return;
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address.');
-      return;
-    }
-
-    if (isLogin) {
-      if (!password.trim()) {
-        Alert.alert('Password Required', 'Please enter your password.');
+    // For signup, validate email format
+    if (!isLogin) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailOrUsername)) {
+        Alert.alert('Invalid Email', 'Please enter a valid email address.');
         return;
       }
-    } else {
+      
       if (!name.trim()) {
         Alert.alert('Name Required', 'Please enter your name to continue.');
         return;
       }
     }
 
+    if (isLogin && !password.trim()) {
+      Alert.alert('Password Required', 'Please enter your password.');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      const result = await signIn(name.trim(), email.trim(), isLogin ? password : undefined);
+      const result = await signIn(name.trim(), emailOrUsername.trim(), isLogin ? password : undefined);
       
       if (result.success) {
         router.replace('/(tabs)');
@@ -61,6 +64,9 @@ export default function AuthScreen() {
     setIsLogin(!isLogin);
     setPassword('');
     setShowPassword(false);
+    // Clear fields when switching modes
+    setEmailOrUsername('');
+    setName('');
   };
 
   return (
@@ -119,11 +125,11 @@ export default function AuthScreen() {
                 </View>
                 <TextInput
                   style={styles.input}
-                  placeholder="Your email"
+                  placeholder={isLogin ? "Email or username" : "Your email"}
                   placeholderTextColor="rgba(102, 126, 234, 0.6)"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
+                  value={emailOrUsername}
+                  onChangeText={setEmailOrUsername}
+                  keyboardType={isLogin ? "default" : "email-address"}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
