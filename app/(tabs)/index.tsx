@@ -151,10 +151,75 @@ const categories: CategoryCard[] = [
 ];
 
 const quickActions = [
-  { title: 'Daily Check-in', icon: Heart, color: '#FF6B6B' },
-  { title: 'Goal Progress', icon: Target, color: '#4ECDC4' },
-  { title: 'Mood Tracker', icon: Brain, color: '#6C5CE7' },
-  { title: 'Quick Journal', icon: BookOpen, color: '#FFD93D' }
+  { 
+    title: 'Daily Check-in', 
+    icon: Heart, 
+    color: '#FF6B6B',
+    action: () => {
+      // Add a daily check-in activity
+      const { addActivity } = useCategories();
+      addActivity({
+        categoryId: 'health',
+        type: 'health',
+        title: 'Daily Check-in Completed',
+        impact: { health: 2, mindfulness: 1, confidence: 1 }
+      });
+    }
+  },
+  { 
+    title: 'Quick Workout', 
+    icon: Dumbbell, 
+    color: '#E17055',
+    action: () => router.push('/fitness')
+  },
+  { 
+    title: 'Meditation', 
+    icon: Brain, 
+    color: '#6C5CE7',
+    action: () => router.push('/mindfulness')
+  },
+  { 
+    title: 'Goal Progress', 
+    icon: Target, 
+    color: '#4ECDC4',
+    action: () => router.push('/progress')
+  },
+  { 
+    title: 'Quick Journal', 
+    icon: BookOpen, 
+    color: '#FFD93D',
+    action: () => router.push('/learning')
+  },
+  { 
+    title: 'Money Check', 
+    icon: DollarSign, 
+    color: '#44A08D',
+    action: () => router.push('/wealth')
+  },
+  { 
+    title: 'Connect', 
+    icon: Users, 
+    color: '#7FCDCD',
+    action: () => router.push('/relationships')
+  },
+  { 
+    title: 'Create', 
+    icon: Palette, 
+    color: '#D35400',
+    action: () => router.push('/creativity')
+  },
+  { 
+    title: 'Energy Boost', 
+    icon: Zap, 
+    color: '#E67E22',
+    action: () => router.push('/energy')
+  },
+  { 
+    title: 'Break Habit', 
+    icon: ShieldCheck, 
+    color: '#00B894',
+    action: () => router.push('/break-free')
+  }
 ];
 
 // Helper function to get readable category names
@@ -179,7 +244,7 @@ const getCategoryName = (key: string): string => {
 };
 
 export default function HomeScreen() {
-  const { getOverallScore, getCategoryProgress, scores, activities } = useCategories();
+  const { getOverallScore, getCategoryProgress, scores, activities, addActivity } = useCategories();
   
   const overallScore = getOverallScore();
   
@@ -270,11 +335,31 @@ export default function HomeScreen() {
     );
   };
 
+  const handleQuickAction = (action: any) => {
+    if (action.title === 'Daily Check-in') {
+      // Add a daily check-in activity
+      addActivity({
+        categoryId: 'health',
+        type: 'health',
+        title: 'Daily Check-in Completed',
+        impact: { health: 2, mindfulness: 1, confidence: 1 }
+      });
+      console.log('Daily check-in completed!');
+    } else if (action.action) {
+      action.action();
+    }
+  };
+
   const renderQuickAction = (action: any, index: number) => {
     const IconComponent = action.icon;
     
     return (
-      <TouchableOpacity key={index} style={styles.quickAction} activeOpacity={0.7}>
+      <TouchableOpacity 
+        key={index} 
+        style={styles.quickAction} 
+        activeOpacity={0.7}
+        onPress={() => handleQuickAction(action)}
+      >
         <View style={[styles.quickActionIcon, { backgroundColor: action.color + '20' }]}>
           <IconComponent size={20} color={action.color} />
         </View>
@@ -337,9 +422,14 @@ export default function HomeScreen() {
       {/* Quick Actions */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.quickActionsContainer}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.quickActionsScrollContainer}
+          style={styles.quickActionsScroll}
+        >
           {quickActions.map(renderQuickAction)}
-        </View>
+        </ScrollView>
       </View>
 
       {/* Categories */}
@@ -479,14 +569,16 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginBottom: 16,
   },
-  quickActionsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 24,
-    justifyContent: 'space-between',
+  quickActionsScroll: {
+    paddingLeft: 24,
+  },
+  quickActionsScrollContainer: {
+    paddingRight: 24,
   },
   quickAction: {
     alignItems: 'center',
-    flex: 1,
+    marginRight: 20,
+    minWidth: 70,
   },
   quickActionIcon: {
     width: 48,
