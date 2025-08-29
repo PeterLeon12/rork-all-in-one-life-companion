@@ -13,7 +13,6 @@ import {
   Award,
   Target,
   Calendar,
-  Moon,
   Smartphone,
   Lock,
   LogOut
@@ -82,15 +81,6 @@ export default function ProfileScreen() {
           type: 'toggle',
           value: user.preferences.notifications,
           onPress: () => handleToggle('notifications')
-        },
-        {
-          id: 'dark-mode',
-          title: 'Dark Mode',
-          subtitle: 'Switch to dark theme',
-          icon: Moon,
-          type: 'toggle',
-          value: isDarkMode,
-          onPress: () => handleToggle('darkMode')
         }
       ]
     },
@@ -147,16 +137,9 @@ export default function ProfileScreen() {
   ];
 
   const handleToggle = (preference: keyof typeof user.preferences) => {
-    if (preference === 'darkMode') {
-      toggleTheme();
-      updatePreferences({
-        [preference]: !user.preferences[preference]
-      });
-    } else {
-      updatePreferences({
-        [preference]: !user.preferences[preference]
-      });
-    }
+    updatePreferences({
+      [preference]: !user.preferences[preference]
+    });
   };
 
   const handleEditProfile = () => {
