@@ -329,6 +329,14 @@ export const [UserProvider, useUser] = createContextHook(() => {
   }, []);
 
   const signOut = useCallback(async () => {
+    try {
+      // Call backend logout endpoint for logging purposes
+      await trpcClient.auth.logout.mutate();
+    } catch (error) {
+      console.log('Backend logout call failed, continuing with client-side logout:', error);
+    }
+    
+    // Clear local state and storage
     setIsAuthenticated(false);
     setUser(defaultUser);
     await removeAuthToken();

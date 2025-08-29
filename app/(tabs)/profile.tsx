@@ -210,9 +210,14 @@ export default function ProfileScreen() {
         { 
           text: 'Sign Out', 
           style: 'destructive',
-          onPress: () => {
-            signOut();
-            router.replace('/');
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/auth');
+            } catch (error) {
+              console.error('Error signing out:', error);
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
           }
         }
       ]
