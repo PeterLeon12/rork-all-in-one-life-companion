@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Text, View, TouchableOpacity, Alert } from 'react-native';
 import { 
   Dumbbell,
   Heart,
   Target,
   TrendingUp,
-  MessageCircle,
   ArrowRight,
   Play,
   Clock,
@@ -13,18 +12,11 @@ import {
   Award,
   CheckCircle
 } from 'lucide-react-native';
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { useCategories, createActivityImpact } from '@/contexts/CategoryContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-interface FitnessOption {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ComponentType<any>;
-  color: string;
-  route?: string;
-}
+import CategoryScreenLayout from '@/components/CategoryScreenLayout';
+import { sharedStyles, colors, gradients } from '@/constants/styles';
 
 interface WorkoutSession {
   id: string;
@@ -35,6 +27,15 @@ interface WorkoutSession {
   type: 'strength' | 'cardio' | 'flexibility' | 'sports';
   calories: number;
   completed?: boolean;
+}
+
+interface FitnessOption {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<any>;
+  color: string;
+  route?: string;
 }
 
 const quickWorkouts: WorkoutSession[] = [
@@ -82,36 +83,29 @@ const fitnessOptions: FitnessOption[] = [
     title: 'Strength Training',
     description: 'Build muscle and increase power',
     icon: Dumbbell,
-    color: '#FF7675'
+    color: colors.fitness
   },
   {
     id: 'cardio',
     title: 'Cardio & Endurance',
     description: 'Improve cardiovascular health',
     icon: Heart,
-    color: '#FF6B6B'
+    color: colors.health
   },
   {
     id: 'sports',
     title: 'Sports Training',
     description: 'Sport-specific performance',
     icon: Target,
-    color: '#74B9FF'
+    color: colors.info
   },
   {
     id: 'progress',
     title: 'Track Progress',
     description: 'Monitor your fitness journey',
     icon: TrendingUp,
-    color: '#6C5CE7'
-  },
-  {
-    id: 'ai-coach',
-    title: 'AI Fitness Coach',
-    description: 'Get personalized guidance',
-    icon: MessageCircle,
-    color: '#FD79A8',
-    route: '/fitness-chat'
+    color: colors.learning,
+    route: '/fitness-history'
   }
 ];
 
@@ -141,18 +135,18 @@ export default function FitnessScreen() {
     }
   };
 
-  const saveFitnessData = async () => {
+  const saveFitnessData = useCallback(async () => {
     try {
       await AsyncStorage.setItem('completedWorkouts', JSON.stringify(completedWorkouts));
       await AsyncStorage.setItem('weeklyFitnessStats', JSON.stringify(weeklyStats));
     } catch (error) {
       console.error('Error saving fitness data:', error);
     }
-  };
+  }, [completedWorkouts, weeklyStats]);
 
   useEffect(() => {
     saveFitnessData();
-  }, [completedWorkouts, weeklyStats]);
+  }, [completedWorkouts, weeklyStats, saveFitnessData]);
 
   const startWorkout = (workout: WorkoutSession) => {
     Alert.alert(
@@ -163,10 +157,9 @@ export default function FitnessScreen() {
         {
           text: 'Start Workout',
           onPress: () => {
-            // Simulate workout completion
             setTimeout(() => {
               completeWorkout(workout);
-            }, 2000); // Simulate 2 seconds for demo
+            }, 2000);
             
             Alert.alert('Workout Started!', 'Great job! Keep pushing yourself!');
           }
@@ -176,17 +169,14 @@ export default function FitnessScreen() {
   };
 
   const completeWorkout = (workout: WorkoutSession) => {
-    // Mark workout as completed
     setCompletedWorkouts(prev => [...prev, workout.id]);
     
-    // Update weekly stats
     setWeeklyStats(prev => ({
       workouts: prev.workouts + 1,
       calories: prev.calories + workout.calories,
       minutes: prev.minutes + workout.duration
     }));
     
-    // Add activity to category system
     const intensity = workout.difficulty === 'Beginner' ? 'light' : 
                      workout.difficulty === 'Advanced' ? 'intense' : 'moderate';
     
@@ -208,45 +198,49 @@ export default function FitnessScreen() {
 
   const renderWorkout = (workout: WorkoutSession) => {
     const isCompleted = completedWorkouts.includes(workout.id);
-    const difficultyColor = workout.difficulty === 'Beginner' ? '#27AE60' :
-                           workout.difficulty === 'Advanced' ? '#E74C3C' : '#F39C12';
+    const difficultyColor = workout.difficulty === 'Beginner' ? colors.success :
+                           workout.difficulty === 'Advanced' ? colors.error : colors.warning;
     
     return (
       <TouchableOpacity
         key={workout.id}
-        style={[styles.workoutCard, isCompleted && styles.completedWorkoutCard]}
+        style={[sharedStyles.card, isCompleted && { backgroundColor: '#F0F9F0', borderColor: colors.success, borderWidth: 1 }]}
         onPress={() => startWorkout(workout)}
         activeOpacity={0.7}
       >
-        <View style={styles.workoutHeader}>
-          <View style={styles.workoutInfo}>
-            <Text style={styles.workoutName}>{workout.name}</Text>
-            <View style={styles.workoutMeta}>
-              <View style={styles.metaItem}>
-                <Clock size={14} color="#7F8C8D" />
-                <Text style={styles.metaText}>{workout.duration} min</Text>
+        <View style={[sharedStyles.flexRow, sharedStyles.spaceBetween, { alignItems: 'center' }]}>
+          <View style={sharedStyles.flex1}>
+            <Text style={sharedStyles.listItemTitle}>{workout.name}</Text>
+            <View style={[sharedStyles.flexRow, { alignItems: 'center', marginVertical: 8 }]}>
+              <View style={[sharedStyles.flexRow, { alignItems: 'center', marginRight: 16 }]}>
+                <Clock size={14} color={colors.textSecondary} />
+                <Text style={[sharedStyles.caption, { marginLeft: 4 }]}>{workout.duration} min</Text>
               </View>
-              <View style={styles.metaItem}>
-                <Flame size={14} color="#E74C3C" />
-                <Text style={styles.metaText}>{workout.calories} cal</Text>
+              <View style={[sharedStyles.flexRow, { alignItems: 'center', marginRight: 16 }]}>
+                <Flame size={14} color={colors.error} />
+                <Text style={[sharedStyles.caption, { marginLeft: 4 }]}>{workout.calories} cal</Text>
               </View>
-              <View style={[styles.difficultyBadge, { backgroundColor: difficultyColor }]}>
-                <Text style={styles.difficultyText}>{workout.difficulty}</Text>
+              <View style={[sharedStyles.smallCard, { backgroundColor: difficultyColor, paddingHorizontal: 8, paddingVertical: 2 }]}>
+                <Text style={[sharedStyles.caption, { color: 'white', fontWeight: '600' }]}>{workout.difficulty}</Text>
               </View>
             </View>
-            <Text style={styles.exercisesList}>
+            <Text style={sharedStyles.bodyText}>
               {workout.exercises.slice(0, 3).join(' • ')}
               {workout.exercises.length > 3 && ' ...'}
             </Text>
           </View>
           
-          <View style={styles.workoutAction}>
+          <View style={{ marginLeft: 16 }}>
             {isCompleted ? (
-              <View style={styles.completedIcon}>
-                <CheckCircle size={24} color="#27AE60" />
-              </View>
+              <CheckCircle size={24} color={colors.success} />
             ) : (
-              <View style={[styles.playButton, { backgroundColor: workout.type === 'cardio' ? '#FF6B6B' : '#74B9FF' }]}>
+              <View style={[sharedStyles.iconContainer, { 
+                backgroundColor: workout.type === 'cardio' ? colors.health : colors.info,
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                marginBottom: 0
+              }]}>
                 <Play size={20} color="white" />
               </View>
             )}
@@ -262,257 +256,66 @@ export default function FitnessScreen() {
     return (
       <TouchableOpacity
         key={option.id}
-        style={styles.optionCard}
+        style={sharedStyles.card}
         onPress={() => option.route && router.push(option.route as any)}
         activeOpacity={0.7}
       >
-        <View style={[styles.optionIcon, { backgroundColor: option.color + '15' }]}>
-          <IconComponent size={28} color={option.color} />
+        <View style={[sharedStyles.flexRow, { alignItems: 'center' }]}>
+          <View style={[sharedStyles.iconContainer, { backgroundColor: option.color + '15', marginBottom: 0, marginRight: 16 }]}>
+            <IconComponent size={28} color={option.color} />
+          </View>
+          <View style={sharedStyles.flex1}>
+            <Text style={sharedStyles.listItemTitle}>{option.title}</Text>
+            <Text style={sharedStyles.bodyText}>{option.description}</Text>
+          </View>
+          <ArrowRight size={20} color={colors.textLight} />
         </View>
-        <View style={styles.optionContent}>
-          <Text style={styles.optionTitle}>{option.title}</Text>
-          <Text style={styles.optionDescription}>{option.description}</Text>
-        </View>
-        <ArrowRight size={20} color="#C7C7CC" />
       </TouchableOpacity>
     );
   };
 
   return (
-    <>
-      <Stack.Screen 
-        options={{
-          title: 'Fitness',
-          headerStyle: { backgroundColor: '#FF7675' },
-          headerTintColor: 'white',
-          headerTitleStyle: { fontWeight: 'bold' }
-        }} 
-      />
-      <View style={styles.container}>
-        <ScrollView 
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <View style={styles.header}>
-            <Text style={styles.title}>Fitness</Text>
-            <Text style={styles.subtitle}>Your personal training companion</Text>
+    <CategoryScreenLayout
+      categoryId="fitness"
+      title="Fitness"
+      headerColor={colors.fitness}
+      headerGradient={gradients.fitness}
+      icon={Dumbbell}
+      chatRoute="/fitness-chat"
+    >
+      {/* Weekly Stats */}
+      <View style={sharedStyles.section}>
+        <Text style={sharedStyles.sectionTitle}>This Week</Text>
+        <View style={sharedStyles.statsRow}>
+          <View style={sharedStyles.statCard}>
+            <Award size={20} color={colors.fitness} />
+            <Text style={sharedStyles.statValue}>{weeklyStats.workouts}</Text>
+            <Text style={sharedStyles.statLabel}>Workouts</Text>
           </View>
-
-          {/* Weekly Stats */}
-          <View style={styles.statsContainer}>
-            <Text style={styles.sectionTitle}>This Week</Text>
-            <View style={styles.statsRow}>
-              <View style={styles.statCard}>
-                <Award size={20} color="#FF7675" />
-                <Text style={styles.statValue}>{weeklyStats.workouts}</Text>
-                <Text style={styles.statLabel}>Workouts</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Flame size={20} color="#E74C3C" />
-                <Text style={styles.statValue}>{weeklyStats.calories}</Text>
-                <Text style={styles.statLabel}>Calories</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Clock size={20} color="#74B9FF" />
-                <Text style={styles.statValue}>{weeklyStats.minutes}</Text>
-                <Text style={styles.statLabel}>Minutes</Text>
-              </View>
-            </View>
+          <View style={sharedStyles.statCard}>
+            <Flame size={20} color={colors.error} />
+            <Text style={sharedStyles.statValue}>{weeklyStats.calories}</Text>
+            <Text style={sharedStyles.statLabel}>Calories</Text>
           </View>
-
-          {/* Quick Workouts */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Quick Workouts</Text>
-            {quickWorkouts.map(renderWorkout)}
+          <View style={sharedStyles.statCard}>
+            <Clock size={20} color={colors.info} />
+            <Text style={sharedStyles.statValue}>{weeklyStats.minutes}</Text>
+            <Text style={sharedStyles.statLabel}>Minutes</Text>
           </View>
-
-          <View style={styles.optionsContainer}>
-            <Text style={styles.sectionTitle}>Fitness Categories</Text>
-            {fitnessOptions.map(renderOption)}
-          </View>
-        </ScrollView>
+        </View>
       </View>
-    </>
+
+      {/* Quick Workouts */}
+      <View style={sharedStyles.section}>
+        <Text style={sharedStyles.sectionTitle}>Quick Workouts</Text>
+        {quickWorkouts.map(renderWorkout)}
+      </View>
+
+      {/* Fitness Categories */}
+      <View style={sharedStyles.section}>
+        <Text style={sharedStyles.sectionTitle}>Fitness Categories</Text>
+        {fitnessOptions.map(renderOption)}
+      </View>
+    </CategoryScreenLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 34,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 24,
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 17,
-    color: '#8E8E93',
-    fontWeight: '400',
-  },
-  optionsContainer: {
-    paddingHorizontal: 20,
-    gap: 1,
-  },
-  optionCard: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  optionIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  optionContent: {
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 2,
-  },
-  optionDescription: {
-    fontSize: 15,
-    color: '#8E8E93',
-    lineHeight: 20,
-  },
-  statsContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 16,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  statCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#8E8E93',
-    marginTop: 4,
-  },
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  workoutCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  completedWorkoutCard: {
-    backgroundColor: '#F0F9F0',
-    borderColor: '#27AE60',
-    borderWidth: 1,
-  },
-  workoutHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  workoutInfo: {
-    flex: 1,
-  },
-  workoutName: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 8,
-  },
-  workoutMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  metaText: {
-    fontSize: 13,
-    color: '#7F8C8D',
-    marginLeft: 4,
-  },
-  difficultyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  difficultyText: {
-    fontSize: 11,
-    color: 'white',
-    fontWeight: '600',
-  },
-  exercisesList: {
-    fontSize: 14,
-    color: '#8E8E93',
-    lineHeight: 18,
-  },
-  workoutAction: {
-    marginLeft: 16,
-  },
-  playButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  completedIcon: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
