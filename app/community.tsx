@@ -1,98 +1,276 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, TextInput } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Stack, router } from 'expo-router';
 import { 
   HandHeart, 
   Users, 
   Heart, 
   TreePine, 
-  MessageCircle, 
-  TrendingUp,
+  MessageCircle,
+  Calendar,
+  Star,
   Award,
   Globe,
-  Handshake
+  Handshake,
+  Clock,
+  Target
 } from 'lucide-react-native';
-import { Stack } from 'expo-router';
-import { useCategoryData } from '@/contexts/CategoryContext';
+import * as Haptics from 'expo-haptics';
 
-interface CommunityFeature {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ComponentType<any>;
-  color: string;
-  route?: string;
-}
+const { width } = Dimensions.get('window');
 
-const communityFeatures: CommunityFeature[] = [
+const communityMetrics = [
+  { label: 'Impact Score', value: '94%', icon: HandHeart, color: '#8BC34A', trend: '+12%' },
+  { label: 'Hours Volunteered', value: '48', icon: Clock, color: '#4ECDC4', trend: '+8h' },
+  { label: 'Lives Touched', value: '127', icon: Heart, color: '#45B7D1', trend: '+23' },
+  { label: 'Projects Completed', value: '15', icon: Award, color: '#96CEB4', trend: '+3' }
+];
+
+const activeProjects = [
   {
-    id: 'volunteering',
-    title: 'Volunteering',
-    description: 'Find meaningful volunteer opportunities in your area',
-    icon: HandHeart,
-    color: '#8BC34A',
-  },
-  {
-    id: 'charity',
-    title: 'Charity Work',
-    description: 'Support causes you care about through donations and action',
+    name: 'Food Bank Support',
+    organization: 'Local Food Bank',
+    type: 'Weekly Volunteering',
+    progress: 85,
     icon: Heart,
-    color: '#E91E63',
+    color: '#8BC34A'
   },
   {
-    id: 'environmental',
-    title: 'Environmental Action',
-    description: 'Participate in environmental conservation efforts',
+    name: 'Community Garden',
+    organization: 'Green Initiative',
+    type: 'Environmental',
+    progress: 60,
     icon: TreePine,
-    color: '#4CAF50',
+    color: '#4ECDC4'
   },
   {
-    id: 'civic',
-    title: 'Civic Engagement',
-    description: 'Get involved in local government and community decisions',
-    icon: Award,
-    color: '#2196F3',
+    name: 'Youth Mentoring',
+    organization: 'Big Brothers Big Sisters',
+    type: 'Mentorship',
+    progress: 40,
+    icon: Users,
+    color: '#45B7D1'
+  }
+];
+
+const communityGoals = [
+  { goal: 'Volunteer 100 hours', progress: 48, target: '100 hours', current: '48 hours' },
+  { goal: 'Support 5 causes', progress: 80, target: '5 causes', current: '4 causes' },
+  { goal: 'Mentor 3 people', progress: 67, target: '3 people', current: '2 people' },
+  { goal: 'Organize 2 events', progress: 50, target: '2 events', current: '1 event' }
+];
+
+const todaysActivities = [
+  {
+    activity: 'Food bank shift',
+    time: '10:00 AM',
+    description: 'Sort donations - 3 hours',
+    completed: true,
+    icon: Heart,
+    color: '#8BC34A'
   },
   {
-    id: 'social',
-    title: 'Social Impact',
-    description: 'Create positive change in your community',
+    activity: 'Community meeting',
+    time: '2:00 PM',
+    description: 'Neighborhood planning',
+    completed: false,
+    icon: Users,
+    color: '#4ECDC4'
+  },
+  {
+    activity: 'Mentoring session',
+    time: '4:00 PM',
+    description: 'Career guidance call',
+    completed: false,
+    icon: Target,
+    color: '#45B7D1'
+  },
+  {
+    activity: 'Fundraiser prep',
+    time: '7:00 PM',
+    description: 'Event planning',
+    completed: false,
+    icon: Star,
+    color: '#96CEB4'
+  }
+];
+
+const quickActions = [
+  {
+    title: 'Find Opportunities',
+    duration: '10 min',
+    benefit: 'Perfect match',
+    icon: HandHeart,
+    color: '#8BC34A'
+  },
+  {
+    title: 'Join Group',
+    duration: '5 min',
+    benefit: 'New connections',
+    icon: Users,
+    color: '#4ECDC4'
+  },
+  {
+    title: 'Make Donation',
+    duration: '3 min',
+    benefit: 'Instant impact',
+    icon: Heart,
+    color: '#45B7D1'
+  },
+  {
+    title: 'Share Story',
+    duration: '15 min',
+    benefit: 'Inspire others',
     icon: Globe,
-    color: '#FF9800',
-  },
-  {
-    id: 'networking',
-    title: 'Community Building',
-    description: 'Build networks and strengthen community bonds',
-    icon: Handshake,
-    color: '#9C27B0',
+    color: '#96CEB4'
   }
 ];
 
 export default function CommunityScreen() {
-  const { score, weeklyImprovement } = useCategoryData('community');
-  const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
-  const [serviceGoal, setServiceGoal] = useState('');
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
 
-  const renderFeatureCard = (feature: CommunityFeature) => {
-    const IconComponent = feature.icon;
-    const isSelected = selectedFeature === feature.id;
+  const handleHapticFeedback = async () => {
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handleChatPress = async () => {
+    await handleHapticFeedback();
+    router.push('/community-chat');
+  };
+
+  const renderMetricCard = (metric: any, index: number) => {
+    const IconComponent = metric.icon;
     
     return (
-      <TouchableOpacity
-        key={feature.id}
-        style={[styles.featureCard, isSelected && styles.selectedCard]}
-        onPress={() => setSelectedFeature(isSelected ? null : feature.id)}
-        activeOpacity={0.8}
-      >
-        <View style={[styles.iconContainer, { backgroundColor: feature.color + '20' }]}>
-          <IconComponent size={24} color={feature.color} />
+      <View key={index} style={styles.metricCard}>
+        <View style={[styles.metricIcon, { backgroundColor: metric.color + '20' }]}>
+          <IconComponent size={20} color={metric.color} />
         </View>
-        <View style={styles.featureContent}>
-          <Text style={styles.featureTitle}>{feature.title}</Text>
-          <Text style={styles.featureDescription}>{feature.description}</Text>
+        <Text style={styles.metricValue}>{metric.value}</Text>
+        <Text style={styles.metricLabel}>{metric.label}</Text>
+        <Text style={styles.metricTrend}>{metric.trend}</Text>
+      </View>
+    );
+  };
+
+  const renderActiveProject = (project: any, index: number) => {
+    const IconComponent = project.icon;
+    
+    return (
+      <TouchableOpacity 
+        key={index} 
+        style={styles.projectCard}
+        activeOpacity={0.8}
+        onPress={handleHapticFeedback}
+      >
+        <View style={[styles.projectIcon, { backgroundColor: project.color + '20' }]}>
+          <IconComponent size={20} color={project.color} />
+        </View>
+        <View style={styles.projectContent}>
+          <Text style={styles.projectName}>{project.name}</Text>
+          <Text style={styles.projectOrg}>{project.organization}</Text>
+          <Text style={styles.projectType}>{project.type}</Text>
+        </View>
+        <View style={styles.projectProgress}>
+          <Text style={styles.projectProgressText}>{project.progress}%</Text>
+          <View style={styles.progressBar}>
+            <View 
+              style={[
+                styles.progressBarFill, 
+                { 
+                  width: `${project.progress}%`,
+                  backgroundColor: project.color
+                }
+              ]} 
+            />
+          </View>
         </View>
       </TouchableOpacity>
+    );
+  };
+
+  const renderQuickAction = (action: any, index: number) => {
+    const IconComponent = action.icon;
+    const isSelected = selectedAction === action.title;
+    
+    return (
+      <TouchableOpacity 
+        key={index} 
+        style={[styles.actionCard, isSelected && styles.actionCardSelected]} 
+        activeOpacity={0.8}
+        onPress={async () => {
+          await handleHapticFeedback();
+          setSelectedAction(isSelected ? null : action.title);
+        }}
+      >
+        <View style={[styles.actionIcon, { backgroundColor: action.color + '20' }]}>
+          <IconComponent size={20} color={action.color} />
+        </View>
+        <View style={styles.actionContent}>
+          <Text style={styles.actionTitle}>{action.title}</Text>
+          <Text style={styles.actionDuration}>{action.duration}</Text>
+        </View>
+        <Text style={styles.actionBenefit}>{action.benefit}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderCommunityActivity = (activity: any, index: number) => {
+    const IconComponent = activity.icon;
+    
+    return (
+      <TouchableOpacity 
+        key={index} 
+        style={[styles.activityCard, activity.completed && styles.completedActivity]}
+        activeOpacity={0.8}
+        onPress={handleHapticFeedback}
+      >
+        <View style={[styles.activityIcon, { backgroundColor: activity.color + '20' }]}>
+          <IconComponent size={16} color={activity.color} />
+        </View>
+        <View style={styles.activityContent}>
+          <Text style={styles.activityName}>{activity.activity}</Text>
+          <Text style={styles.activityDescription}>{activity.description}</Text>
+        </View>
+        <View style={styles.activityTime}>
+          <Text style={styles.activityTimeText}>{activity.time}</Text>
+          {activity.completed && (
+            <View style={styles.completedBadge}>
+              <Text style={styles.completedText}>✓</Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderCommunityGoal = (goal: any, index: number) => {
+    return (
+      <View key={index} style={styles.goalCard}>
+        <View style={styles.goalHeader}>
+          <Text style={styles.goalName}>{goal.goal}</Text>
+          <Text style={styles.goalProgress}>{goal.progress}%</Text>
+        </View>
+
+        <View style={styles.progressBar}>
+          <View 
+            style={[
+              styles.progressBarFill, 
+              { 
+                width: `${goal.progress}%`,
+                backgroundColor: goal.progress >= 80 ? '#8BC34A' : goal.progress >= 60 ? '#4ECDC4' : '#45B7D1'
+              }
+            ]} 
+          />
+        </View>
+
+        <Text style={styles.goalDetail}>
+          {goal.current} / {goal.target}
+        </Text>
+      </View>
     );
   };
 
@@ -100,109 +278,72 @@ export default function CommunityScreen() {
     <>
       <Stack.Screen 
         options={{ 
-          title: 'Community & Service',
+          title: "Community & Service",
           headerStyle: { backgroundColor: '#8BC34A' },
           headerTintColor: 'white',
-          headerTitleStyle: { fontWeight: 'bold' },
-          headerRight: () => (
-            <TouchableOpacity>
-              <MessageCircle size={24} color="white" />
-            </TouchableOpacity>
-          )
+          headerTitleStyle: { fontWeight: 'bold' }
         }} 
       />
       
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header Stats */}
-        <LinearGradient
-          colors={['#8BC34A', '#4CAF50']}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <HandHeart size={24} color="white" />
-              <Text style={styles.statValue}>{score}%</Text>
-              <Text style={styles.statLabel}>Service Score</Text>
+        <View style={styles.headerCard}>
+          <LinearGradient
+            colors={['#8BC34A', '#4ECDC4']}
+            style={styles.headerGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.headerContent}>
+              <HandHeart size={32} color="white" />
+              <Text style={styles.headerTitle}>Impact Score</Text>
+              <Text style={styles.headerScore}>94%</Text>
+              <Text style={styles.headerSubtitle}>Making a difference every day</Text>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <TrendingUp size={24} color="white" />
-              <Text style={styles.statValue}>+{weeklyImprovement}</Text>
-              <Text style={styles.statLabel}>This Week</Text>
-            </View>
-          </View>
-        </LinearGradient>
 
-        {/* Service Goal Input */}
+            <TouchableOpacity 
+              style={styles.chatButton}
+              onPress={handleChatPress}
+              activeOpacity={0.8}
+            >
+              <MessageCircle size={20} color="white" />
+              <Text style={styles.chatButtonText}>Community Guide</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+
+        {/* Community Metrics */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Set Your Service Goal</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              placeholder="How do you want to serve your community?"
-              value={serviceGoal}
-              onChangeText={setServiceGoal}
-              multiline
-            />
+          <Text style={styles.sectionTitle}>Community Overview</Text>
+          <View style={styles.metricsGrid}>
+            {communityMetrics.map(renderMetricCard)}
           </View>
         </View>
 
-        {/* Community Features */}
+        {/* Active Projects */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Community & Service Features</Text>
-          <Text style={styles.sectionSubtitle}>
-            Make a positive impact and strengthen community bonds
-          </Text>
-          
-          <View style={styles.featuresContainer}>
-            {communityFeatures.map(renderFeatureCard)}
-          </View>
+          <Text style={styles.sectionTitle}>Active Projects</Text>
+          {activeProjects.map(renderActiveProject)}
         </View>
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsContainer}>
-            <TouchableOpacity style={styles.quickAction}>
-              <HandHeart size={20} color="#8BC34A" />
-              <Text style={styles.quickActionText}>Find Volunteer Work</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAction}>
-              <Heart size={20} color="#E91E63" />
-              <Text style={styles.quickActionText}>Donate</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAction}>
-              <Users size={20} color="#2196F3" />
-              <Text style={styles.quickActionText}>Join Group</Text>
-            </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Community Boosters</Text>
+          <View style={styles.actionsList}>
+            {quickActions.map(renderQuickAction)}
           </View>
         </View>
 
-        {/* Service Tips */}
+        {/* Today's Community Activities */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Service Tips</Text>
-          <View style={styles.tipsContainer}>
-            <View style={styles.tipCard}>
-              <Text style={styles.tipTitle}>🤝 Start Small</Text>
-              <Text style={styles.tipText}>
-                Begin with small acts of service in your immediate community
-              </Text>
-            </View>
-            <View style={styles.tipCard}>
-              <Text style={styles.tipTitle}>💝 Use Your Skills</Text>
-              <Text style={styles.tipText}>
-                Volunteer in areas where you can use your unique talents and skills
-              </Text>
-            </View>
-            <View style={styles.tipCard}>
-              <Text style={styles.tipTitle}>🌱 Be Consistent</Text>
-              <Text style={styles.tipText}>
-                Regular small contributions often have more impact than one-time large efforts
-              </Text>
-            </View>
-          </View>
+          <Text style={styles.sectionTitle}>Today&apos;s Service</Text>
+          {todaysActivities.map(renderCommunityActivity)}
+        </View>
+
+        {/* Community Goals */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>This Year&apos;s Goals</Text>
+          {communityGoals.map(renderCommunityGoal)}
         </View>
       </ScrollView>
     </>
@@ -214,153 +355,305 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  headerCard: {
+    margin: 24,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
   headerGradient: {
     padding: 24,
-  },
-  statsContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  statItem: {
+  headerContent: {
     alignItems: 'center',
-    flex: 1,
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  headerTitle: {
     color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  headerScore: {
+    color: 'white',
+    fontSize: 36,
+    fontWeight: 'bold',
     marginTop: 8,
   },
-  statLabel: {
-    fontSize: 12,
+  headerSubtitle: {
     color: 'white',
-    opacity: 0.8,
+    fontSize: 14,
+    opacity: 0.9,
     marginTop: 4,
   },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    marginHorizontal: 20,
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 16,
+  },
+  chatButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   section: {
-    padding: 24,
+    marginBottom: 32,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#2C3E50',
-    marginBottom: 8,
+    paddingHorizontal: 24,
+    marginBottom: 16,
   },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  inputContainer: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  textInput: {
-    fontSize: 16,
-    color: '#2C3E50',
-    minHeight: 60,
-    textAlignVertical: 'top',
-  },
-  featuresContainer: {
-    gap: 12,
-  },
-  featureCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+  metricsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+  },
+  metricCard: {
+    backgroundColor: 'white',
+    width: (width - 60) / 2,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  selectedCard: {
-    borderWidth: 2,
-    borderColor: '#8BC34A',
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  metricIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginBottom: 12,
   },
-  featureContent: {
-    flex: 1,
-  },
-  featureTitle: {
-    fontSize: 16,
+  metricValue: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#2C3E50',
     marginBottom: 4,
   },
-  featureDescription: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    lineHeight: 20,
-  },
-  quickActionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  quickAction: {
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    flex: 1,
-    marginHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  quickActionText: {
+  metricLabel: {
     fontSize: 12,
-    color: '#2C3E50',
-    marginTop: 8,
+    color: '#7F8C8D',
     textAlign: 'center',
+    marginBottom: 4,
   },
-  tipsContainer: {
-    gap: 12,
+  metricTrend: {
+    fontSize: 10,
+    color: '#27AE60',
+    textAlign: 'center',
+    fontWeight: '600',
   },
-  tipCard: {
+  projectCard: {
     backgroundColor: 'white',
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 24,
+    marginBottom: 12,
+    borderRadius: 16,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  tipTitle: {
+  projectIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  projectContent: {
+    flex: 1,
+  },
+  projectName: {
     fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  projectOrg: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginBottom: 2,
+  },
+  projectType: {
+    fontSize: 12,
+    color: '#8BC34A',
+    fontWeight: '600',
+  },
+  projectProgress: {
+    alignItems: 'flex-end',
+    minWidth: 60,
+  },
+  projectProgressText: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#2C3E50',
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  tipText: {
-    fontSize: 14,
+  actionsList: {
+    paddingHorizontal: 24,
+  },
+  actionCard: {
+    backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  actionCardSelected: {
+    borderWidth: 2,
+    borderColor: '#8BC34A',
+  },
+  actionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  actionContent: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  actionDuration: {
+    fontSize: 12,
     color: '#7F8C8D',
-    lineHeight: 20,
+  },
+  actionBenefit: {
+    fontSize: 12,
+    color: '#8BC34A',
+    fontWeight: '600',
+  },
+  activityCard: {
+    backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 24,
+    marginBottom: 12,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  completedActivity: {
+    opacity: 0.7,
+    borderLeftWidth: 4,
+    borderLeftColor: '#27AE60',
+  },
+  activityIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  activityContent: {
+    flex: 1,
+  },
+  activityName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  activityDescription: {
+    fontSize: 12,
+    color: '#7F8C8D',
+  },
+  activityTime: {
+    alignItems: 'flex-end',
+  },
+  activityTimeText: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginBottom: 4,
+  },
+  completedBadge: {
+    backgroundColor: '#27AE60',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  completedText: {
+    fontSize: 10,
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  goalCard: {
+    backgroundColor: 'white',
+    marginHorizontal: 24,
+    marginBottom: 12,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  goalName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+  },
+  goalProgress: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#8BC34A',
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: '#E9ECEF',
+    borderRadius: 3,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  goalDetail: {
+    fontSize: 12,
+    color: '#7F8C8D',
   },
 });
