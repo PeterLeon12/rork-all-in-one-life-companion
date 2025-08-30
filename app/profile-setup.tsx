@@ -111,11 +111,11 @@ export default function ProfileSetupScreen() {
       await AsyncStorage.setItem('userProfile', JSON.stringify(profile));
       Alert.alert(
         'Success', 
-        'Profile saved successfully! Your AI fitness plan will be personalized based on this information.',
+        'Health profile saved successfully! You\'ll now receive personalized health tips based on your information.',
         [
           {
-            text: 'View AI Plan',
-            onPress: () => router.push('/ai-fitness-plan')
+            text: 'View Health Tips',
+            onPress: () => router.push('/health')
           },
           {
             text: 'OK',
@@ -188,9 +188,9 @@ export default function ProfileSetupScreen() {
                   end={{ x: 1, y: 1 }}
                 >
                   <User size={32} color="white" />
-                  <Text style={styles.headerTitle}>Personal Profile</Text>
+                  <Text style={styles.headerTitle}>Health Profile</Text>
                   <Text style={styles.headerSubtitle}>
-                    Help us create your perfect fitness plan
+                    Get personalized health tips and recommendations
                   </Text>
                 </LinearGradient>
               </View>
@@ -416,7 +416,7 @@ export default function ProfileSetupScreen() {
                 >
                   <Save size={24} color="white" />
                   <Text style={styles.saveButtonText}>
-                    {isLoading ? 'Saving...' : 'Save Profile & Generate AI Plan'}
+                    {isLoading ? 'Saving...' : 'Save Health Profile'}
                   </Text>
                 </TouchableOpacity>
               </View>

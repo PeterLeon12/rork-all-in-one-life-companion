@@ -89,7 +89,137 @@ const healthPrograms = [
   }
 ];
 
-const healthTips = [
+// Function to generate personalized health tips based on user profile
+const generatePersonalizedHealthTips = async () => {
+  try {
+    const savedProfile = await AsyncStorage.getItem('userProfile');
+    if (!savedProfile) {
+      return getDefaultHealthTips();
+    }
+    
+    const profile = JSON.parse(savedProfile);
+    const tips = [];
+    
+    // BMI-based tips
+    const bmi = profile.weight / ((profile.height / 100) ** 2);
+    if (bmi < 18.5) {
+      tips.push({
+        title: 'Healthy Weight Gain',
+        description: `With a BMI of ${bmi.toFixed(1)}, focus on nutrient-dense foods like nuts, avocados, and lean proteins.`,
+        icon: Utensils,
+        color: '#27AE60'
+      });
+    } else if (bmi > 25) {
+      tips.push({
+        title: 'Healthy Weight Management',
+        description: `With a BMI of ${bmi.toFixed(1)}, consider portion control and regular physical activity.`,
+        icon: Activity,
+        color: '#FF6B6B'
+      });
+    } else {
+      tips.push({
+        title: 'Maintain Healthy Weight',
+        description: `Great job! Your BMI of ${bmi.toFixed(1)} is in the healthy range. Keep up your current habits.`,
+        icon: CheckCircle,
+        color: '#27AE60'
+      });
+    }
+    
+    // Age-based tips
+    if (profile.age < 30) {
+      tips.push({
+        title: 'Build Healthy Habits',
+        description: 'Your twenties are perfect for establishing lifelong healthy habits. Focus on consistent sleep and exercise.',
+        icon: TrendingUp,
+        color: '#4ECDC4'
+      });
+    } else if (profile.age < 50) {
+      tips.push({
+        title: 'Prevent Age-Related Issues',
+        description: 'Include strength training and calcium-rich foods to maintain bone density and muscle mass.',
+        icon: Activity,
+        color: '#FF6B6B'
+      });
+    } else {
+      tips.push({
+        title: 'Active Aging',
+        description: 'Focus on balance exercises, regular health screenings, and staying socially active.',
+        icon: Heart,
+        color: '#6C5CE7'
+      });
+    }
+    
+    // Activity level based tips
+    if (profile.activityLevel === 'sedentary') {
+      tips.push({
+        title: 'Start Moving More',
+        description: 'Begin with 10-minute walks after meals. Small steps lead to big changes!',
+        icon: Activity,
+        color: '#FF6B6B'
+      });
+    } else if (profile.activityLevel === 'very_active') {
+      tips.push({
+        title: 'Recovery is Key',
+        description: 'With your high activity level, ensure adequate rest and nutrition for optimal recovery.',
+        icon: Moon,
+        color: '#6C5CE7'
+      });
+    }
+    
+    // Goal-based tips
+    if (profile.fitnessGoals?.includes('Weight Loss')) {
+      tips.push({
+        title: 'Sustainable Weight Loss',
+        description: 'Aim for 1-2 pounds per week through a combination of diet and exercise. Stay consistent!',
+        icon: Target,
+        color: '#FF6B6B'
+      });
+    }
+    
+    if (profile.fitnessGoals?.includes('Better Sleep')) {
+      tips.push({
+        title: 'Sleep Optimization',
+        description: 'Create a bedtime routine, avoid screens 1 hour before bed, and keep your room cool (65-68°F).',
+        icon: Moon,
+        color: '#6C5CE7'
+      });
+    }
+    
+    if (profile.fitnessGoals?.includes('Stress Relief')) {
+      tips.push({
+        title: 'Stress Management',
+        description: 'Try 5-minute daily meditation, deep breathing exercises, or gentle yoga to reduce stress.',
+        icon: Brain,
+        color: '#FFD93D'
+      });
+    }
+    
+    // Gender-specific tips
+    if (profile.gender === 'female') {
+      tips.push({
+        title: 'Women\'s Health Focus',
+        description: 'Ensure adequate iron and calcium intake. Consider strength training to prevent osteoporosis.',
+        icon: Heart,
+        color: '#FF6B6B'
+      });
+    }
+    
+    // Hydration tip (universal)
+    tips.push({
+      title: 'Stay Hydrated',
+      description: `Aim for ${Math.round(profile.weight * 35)}ml of water daily (about ${Math.round(profile.weight * 35 / 250)} glasses).`,
+      icon: Droplets,
+      color: '#4ECDC4'
+    });
+    
+    return tips.slice(0, 4); // Return max 4 tips
+  } catch (error) {
+    console.error('Error generating personalized tips:', error);
+    return getDefaultHealthTips();
+  }
+};
+
+const getDefaultHealthTips = () => [
   {
     title: 'Stay Hydrated',
     description: 'Drink water first thing in the morning to kickstart your metabolism.',
@@ -148,6 +278,7 @@ export default function HealthScreen() {
   const [isPedometerAvailable, setIsPedometerAvailable] = useState<boolean>(false);
   const [pastStepCount, setPastStepCount] = useState<number>(0);
   const [currentStepCount, setCurrentStepCount] = useState<number>(0);
+  const [personalizedTips, setPersonalizedTips] = useState<any[]>(getDefaultHealthTips());
 
   const loadHealthData = React.useCallback(async () => {
     try {
@@ -231,7 +362,13 @@ export default function HealthScreen() {
     loadHealthData();
     checkDailyReset();
     initializePedometer();
+    loadPersonalizedTips();
   }, [loadHealthData, checkDailyReset]);
+  
+  const loadPersonalizedTips = async () => {
+    const tips = await generatePersonalizedHealthTips();
+    setPersonalizedTips(tips);
+  };
 
   // Save data whenever metrics change
   useEffect(() => {
@@ -705,11 +842,11 @@ export default function HealthScreen() {
           </View>
         </View>
 
-        {/* Health Tips */}
+        {/* Personalized Health Tips */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Daily Health Tips</Text>
+          <Text style={styles.sectionTitle}>Personalized Health Tips</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tipsScrollView}>
-            {healthTips.map((tip, index) => {
+            {personalizedTips.map((tip, index) => {
               const IconComponent = tip.icon;
               return (
                 <View key={index} style={styles.tipCard}>
@@ -730,35 +867,33 @@ export default function HealthScreen() {
           {healthPrograms.map(renderProgram)}
         </View>
 
-        {/* Fitness & Energy Section */}
+        {/* Health Profile & Tips Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Fitness & Energy</Text>
+          <Text style={styles.sectionTitle}>Health Profile & Tips</Text>
           <View style={styles.fitnessGrid}>
             <TouchableOpacity 
               style={styles.fitnessCard}
               onPress={() => router.push('/fitness-history')}
             >
               <BarChart3 size={24} color="#FF6B6B" />
-              <Text style={styles.fitnessCardTitle}>Workout History</Text>
+              <Text style={styles.fitnessCardTitle}>Activity History</Text>
               <Text style={styles.fitnessCardDescription}>Track your progress</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.fitnessCard}
-              onPress={() => router.push('/profile-setup')}
+              onPress={async () => {
+                router.push('/profile-setup');
+                // Refresh tips when returning from profile setup
+                setTimeout(async () => {
+                  const tips = await generatePersonalizedHealthTips();
+                  setPersonalizedTips(tips);
+                }, 1000);
+              }}
             >
               <User size={24} color="#4ECDC4" />
-              <Text style={styles.fitnessCardTitle}>Fitness Profile</Text>
-              <Text style={styles.fitnessCardDescription}>Setup your goals</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.fitnessCard}
-              onPress={() => router.push('/ai-fitness-plan')}
-            >
-              <Target size={24} color="#FFD93D" />
-              <Text style={styles.fitnessCardTitle}>AI Workout Plan</Text>
-              <Text style={styles.fitnessCardDescription}>Personalized training</Text>
+              <Text style={styles.fitnessCardTitle}>Health Profile</Text>
+              <Text style={styles.fitnessCardDescription}>Get personalized tips</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 

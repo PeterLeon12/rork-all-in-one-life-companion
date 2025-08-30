@@ -5,16 +5,14 @@ import { Stack, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   Activity, 
-  Calendar, 
   TrendingUp, 
   TrendingDown,
   Target,
   Award,
   ChevronLeft,
   ChevronRight,
-  BarChart3,
   User,
-  Settings
+  Heart
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -402,10 +400,10 @@ export default function FitnessHistoryScreen() {
                   
                   <TouchableOpacity 
                     style={[styles.actionButton, { backgroundColor: '#4ECDC4' }]}
-                    onPress={() => router.push('/ai-fitness-plan')}
+                    onPress={() => router.push('/health')}
                   >
-                    <BarChart3 size={24} color="white" />
-                    <Text style={styles.actionButtonText}>AI Plan</Text>
+                    <Heart size={24} color="white" />
+                    <Text style={styles.actionButtonText}>Health Tips</Text>
                   </TouchableOpacity>
                 </View>
               </View>
