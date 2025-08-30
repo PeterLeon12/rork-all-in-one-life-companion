@@ -891,7 +891,7 @@ export default function HealthScreen() {
   const [goalEditModalVisible, setGoalEditModalVisible] = useState<boolean>(false);
 
   const [personalizedTips, setPersonalizedTips] = useState<any[]>(getDefaultHealthTips());
-  const [currentQuoteIndex, setCurrentQuoteIndex] = useState<number>(0);
+  const [currentQuote, setCurrentQuote] = useState<any>(healthQuotes[0]);
 
   const loadHealthData = React.useCallback(async () => {
     try {
@@ -1010,10 +1010,18 @@ export default function HealthScreen() {
     checkDailyReset();
     loadPersonalizedTips();
     
-    // Rotate quotes every 15 seconds for better reading time
+    // Show random quotes every 20 seconds for better reading time
+    const getRandomQuote = () => {
+      const randomIndex = Math.floor(Math.random() * healthQuotes.length);
+      return healthQuotes[randomIndex];
+    };
+    
+    // Set initial random quote
+    setCurrentQuote(getRandomQuote());
+    
     const quoteInterval = setInterval(() => {
-      setCurrentQuoteIndex(prev => (prev + 1) % healthQuotes.length);
-    }, 15000);
+      setCurrentQuote(getRandomQuote());
+    }, 20000);
     
     return () => clearInterval(quoteInterval);
   }, [loadHealthData, checkDailyReset]);
@@ -1730,32 +1738,18 @@ export default function HealthScreen() {
             </View>
             
             <Text style={styles.quoteText}>
-              &ldquo;{healthQuotes[currentQuoteIndex].quote}&rdquo;
+              &ldquo;{currentQuote.quote}&rdquo;
             </Text>
             
             <View style={styles.quoteFooter}>
               <Text style={styles.quoteAuthor}>
-                — {healthQuotes[currentQuoteIndex].author}
+                — {currentQuote.author}
               </Text>
-              <View style={[styles.quoteCategoryBadge, { backgroundColor: getCategoryColor(healthQuotes[currentQuoteIndex].category) + '20' }]}>
-                <Text style={[styles.quoteCategoryText, { color: getCategoryColor(healthQuotes[currentQuoteIndex].category) }]}>
-                  {healthQuotes[currentQuoteIndex].category.toUpperCase()}
+              <View style={[styles.quoteCategoryBadge, { backgroundColor: getCategoryColor(currentQuote.category) + '20' }]}>
+                <Text style={[styles.quoteCategoryText, { color: getCategoryColor(currentQuote.category) }]}>
+                  {currentQuote.category.toUpperCase()}
                 </Text>
               </View>
-            </View>
-            
-            <View style={styles.quoteProgress}>
-              <View style={styles.quoteProgressBar}>
-                <View 
-                  style={[
-                    styles.quoteProgressFill,
-                    { width: `${((currentQuoteIndex + 1) / healthQuotes.length) * 100}%` }
-                  ]}
-                />
-              </View>
-              <Text style={styles.quoteProgressText}>
-                {currentQuoteIndex + 1} of {healthQuotes.length}
-              </Text>
             </View>
           </View>
         </View>
@@ -2964,25 +2958,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 0.5,
   },
-  quoteProgress: {
-    alignItems: 'center',
-  },
-  quoteProgressBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: '#E9ECEF',
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  quoteProgressFill: {
-    height: '100%',
-    backgroundColor: '#6C5CE7',
-    borderRadius: 2,
-  },
-  quoteProgressText: {
-    fontSize: 12,
-    color: '#95A5A6',
-    fontWeight: '500',
-  },
+
 });
