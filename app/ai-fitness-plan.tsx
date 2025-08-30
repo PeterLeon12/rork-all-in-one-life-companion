@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Alert, Image, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,7 +15,11 @@ import {
   Play,
   CheckCircle,
   User,
-  MessageCircle
+  MessageCircle,
+  X,
+  Timer,
+  Repeat,
+  Eye
 } from 'lucide-react-native';
 
 interface UserProfile {
@@ -50,6 +54,10 @@ interface Exercise {
   restTime: number;
   instructions: string;
   targetMuscles: string[];
+  imageUrl: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  tips: string[];
+  commonMistakes: string[];
 }
 
 interface NutritionPlan {
@@ -99,7 +107,11 @@ const generateAIFitnessPlan = (profile: UserProfile): { workouts: WorkoutPlan[],
           reps: '30 seconds',
           restTime: 30,
           instructions: 'Jump while spreading legs and raising arms overhead',
-          targetMuscles: ['Full Body']
+          targetMuscles: ['Full Body'],
+          imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+          difficulty: 'Easy',
+          tips: ['Keep your core engaged', 'Land softly on your feet', 'Maintain steady rhythm'],
+          commonMistakes: ['Landing too hard', 'Not fully extending arms', 'Going too fast']
         },
         {
           name: 'Burpees',
@@ -107,7 +119,11 @@ const generateAIFitnessPlan = (profile: UserProfile): { workouts: WorkoutPlan[],
           reps: '10-15',
           restTime: 45,
           instructions: 'Squat, jump back to plank, push-up, jump forward, jump up',
-          targetMuscles: ['Full Body']
+          targetMuscles: ['Full Body'],
+          imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+          difficulty: 'Hard',
+          tips: ['Keep your core tight throughout', 'Jump explosively', 'Control the descent'],
+          commonMistakes: ['Sagging hips in plank', 'Not jumping high enough', 'Poor form when tired']
         },
         {
           name: 'Mountain Climbers',
@@ -115,7 +131,11 @@ const generateAIFitnessPlan = (profile: UserProfile): { workouts: WorkoutPlan[],
           reps: '30 seconds',
           restTime: 30,
           instructions: 'In plank position, alternate bringing knees to chest rapidly',
-          targetMuscles: ['Core', 'Cardio']
+          targetMuscles: ['Core', 'Cardio'],
+          imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+          difficulty: 'Medium',
+          tips: ['Keep hips level', 'Drive knees toward chest', 'Maintain plank position'],
+          commonMistakes: ['Raising hips too high', 'Not bringing knees far enough', 'Losing plank form']
         }
       ],
       targetMuscles: ['Full Body', 'Cardio'],
@@ -138,7 +158,11 @@ const generateAIFitnessPlan = (profile: UserProfile): { workouts: WorkoutPlan[],
           reps: '8-12',
           restTime: 60,
           instructions: 'Keep body straight, lower chest to ground, push back up',
-          targetMuscles: ['Chest', 'Shoulders', 'Triceps']
+          targetMuscles: ['Chest', 'Shoulders', 'Triceps'],
+          imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+          difficulty: 'Medium',
+          tips: ['Keep body in straight line', 'Lower chest to ground', 'Push through palms'],
+          commonMistakes: ['Sagging hips', 'Not going low enough', 'Flaring elbows too wide']
         },
         {
           name: 'Pike Push-ups',
@@ -146,7 +170,11 @@ const generateAIFitnessPlan = (profile: UserProfile): { workouts: WorkoutPlan[],
           reps: '6-10',
           restTime: 60,
           instructions: 'In downward dog position, lower head toward ground',
-          targetMuscles: ['Shoulders', 'Triceps']
+          targetMuscles: ['Shoulders', 'Triceps'],
+          imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+          difficulty: 'Hard',
+          tips: ['Keep legs straight', 'Lower head between hands', 'Push up explosively'],
+          commonMistakes: ['Bending knees', 'Not lowering far enough', 'Poor hand placement']
         },
         {
           name: 'Tricep Dips',
@@ -154,7 +182,11 @@ const generateAIFitnessPlan = (profile: UserProfile): { workouts: WorkoutPlan[],
           reps: '8-12',
           restTime: 60,
           instructions: 'Using chair or bench, lower body by bending arms',
-          targetMuscles: ['Triceps', 'Shoulders']
+          targetMuscles: ['Triceps', 'Shoulders'],
+          imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+          difficulty: 'Medium',
+          tips: ['Keep elbows close to body', 'Lower until 90 degrees', 'Push through palms'],
+          commonMistakes: ['Flaring elbows out', 'Not going low enough', 'Using legs too much']
         }
       ],
       targetMuscles: ['Chest', 'Shoulders', 'Triceps'],
@@ -177,7 +209,11 @@ const generateAIFitnessPlan = (profile: UserProfile): { workouts: WorkoutPlan[],
           reps: '10-15',
           restTime: 0,
           instructions: 'On hands and knees, alternate arching and rounding spine',
-          targetMuscles: ['Spine', 'Core']
+          targetMuscles: ['Spine', 'Core'],
+          imageUrl: 'https://images.unsplash.com/photo-1506629905607-d9c297d3f49e?w=400&h=300&fit=crop',
+          difficulty: 'Easy',
+          tips: ['Move slowly and controlled', 'Breathe with movement', 'Feel stretch in spine'],
+          commonMistakes: ['Moving too fast', 'Not engaging core', 'Forcing the movement']
         },
         {
           name: 'Downward Dog',
@@ -185,7 +221,11 @@ const generateAIFitnessPlan = (profile: UserProfile): { workouts: WorkoutPlan[],
           reps: '30 seconds',
           restTime: 15,
           instructions: 'Form inverted V-shape, press heels down, lengthen spine',
-          targetMuscles: ['Hamstrings', 'Calves', 'Shoulders']
+          targetMuscles: ['Hamstrings', 'Calves', 'Shoulders'],
+          imageUrl: 'https://images.unsplash.com/photo-1506629905607-d9c297d3f49e?w=400&h=300&fit=crop',
+          difficulty: 'Medium',
+          tips: ['Press through palms', 'Lengthen spine', 'Relax neck'],
+          commonMistakes: ['Hunching shoulders', 'Bending knees too much', 'Not pressing heels down']
         },
         {
           name: 'Pigeon Pose',
@@ -193,7 +233,11 @@ const generateAIFitnessPlan = (profile: UserProfile): { workouts: WorkoutPlan[],
           reps: '30 seconds each side',
           restTime: 15,
           instructions: 'Hip opener, bring one leg forward, extend other leg back',
-          targetMuscles: ['Hips', 'Glutes']
+          targetMuscles: ['Hips', 'Glutes'],
+          imageUrl: 'https://images.unsplash.com/photo-1506629905607-d9c297d3f49e?w=400&h=300&fit=crop',
+          difficulty: 'Medium',
+          tips: ['Keep hips square', 'Breathe deeply', 'Use props if needed'],
+          commonMistakes: ['Forcing the stretch', 'Uneven hips', 'Holding breath']
         }
       ],
       targetMuscles: ['Full Body', 'Flexibility'],
@@ -216,7 +260,11 @@ const generateAIFitnessPlan = (profile: UserProfile): { workouts: WorkoutPlan[],
         reps: '30-60 seconds',
         restTime: 30,
         instructions: 'Hold straight line from head to heels, engage core',
-        targetMuscles: ['Core', 'Shoulders']
+        targetMuscles: ['Core', 'Shoulders'],
+        imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+        difficulty: 'Medium',
+        tips: ['Keep body straight', 'Breathe normally', 'Engage core muscles'],
+        commonMistakes: ['Sagging hips', 'Raising hips too high', 'Holding breath']
       },
       {
         name: 'Dead Bug',
@@ -224,7 +272,11 @@ const generateAIFitnessPlan = (profile: UserProfile): { workouts: WorkoutPlan[],
         reps: '10 each side',
         restTime: 30,
         instructions: 'Lie on back, extend opposite arm and leg while keeping core stable',
-        targetMuscles: ['Core', 'Stability']
+        targetMuscles: ['Core', 'Stability'],
+        imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+        difficulty: 'Easy',
+        tips: ['Keep lower back pressed down', 'Move slowly', 'Opposite arm and leg'],
+        commonMistakes: ['Arching back', 'Moving too fast', 'Not engaging core']
       },
       {
         name: 'Bird Dog',
@@ -232,7 +284,11 @@ const generateAIFitnessPlan = (profile: UserProfile): { workouts: WorkoutPlan[],
         reps: '10 each side',
         restTime: 30,
         instructions: 'On hands and knees, extend opposite arm and leg',
-        targetMuscles: ['Core', 'Back', 'Glutes']
+        targetMuscles: ['Core', 'Back', 'Glutes'],
+        imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
+        difficulty: 'Medium',
+        tips: ['Keep hips level', 'Extend fully', 'Hold briefly at top'],
+        commonMistakes: ['Rotating hips', 'Not extending fully', 'Rushing the movement']
       }
     ],
     targetMuscles: ['Core', 'Stability'],
@@ -292,6 +348,9 @@ export default function AIFitnessPlanScreen() {
   const [plan, setPlan] = useState<{ workouts: WorkoutPlan[], nutrition: NutritionPlan, recommendations: string[] } | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutPlan | null>(null);
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [showWorkoutModal, setShowWorkoutModal] = useState<boolean>(false);
+  const [showExerciseModal, setShowExerciseModal] = useState<boolean>(false);
 
   useEffect(() => {
     loadProfileAndGeneratePlan();
@@ -412,21 +471,35 @@ export default function AIFitnessPlanScreen() {
           <Text style={styles.detailsText}>{workout.equipment.join(', ')}</Text>
           
           <Text style={styles.detailsTitle}>Exercises ({workout.exercises.length}):</Text>
-          {workout.exercises.slice(0, 3).map((exercise, idx) => (
-            <Text key={idx} style={styles.exerciseItem}>
-              • {exercise.name} - {exercise.sets} sets × {exercise.reps}
-            </Text>
-          ))}
-          {workout.exercises.length > 3 && (
-            <Text style={styles.moreExercises}>+{workout.exercises.length - 3} more exercises</Text>
-          )}
+          <View style={styles.exercisePreview}>
+            {workout.exercises.slice(0, 2).map((exercise, idx) => (
+              <View key={idx} style={styles.exercisePreviewItem}>
+                <Image source={{ uri: exercise.imageUrl }} style={styles.exercisePreviewImage} />
+                <View style={styles.exercisePreviewInfo}>
+                  <Text style={styles.exercisePreviewName}>{exercise.name}</Text>
+                  <Text style={styles.exercisePreviewMeta}>{exercise.sets} sets × {exercise.reps}</Text>
+                  <View style={styles.difficultyContainer}>
+                    <View style={[styles.difficultyDot, { backgroundColor: exercise.difficulty === 'Easy' ? '#27AE60' : exercise.difficulty === 'Medium' ? '#F39C12' : '#E74C3C' }]} />
+                    <Text style={styles.difficultyLabel}>{exercise.difficulty}</Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+            {workout.exercises.length > 2 && (
+              <Text style={styles.moreExercises}>+{workout.exercises.length - 2} more exercises</Text>
+            )}
+          </View>
         </View>
         
         <View style={styles.workoutActions}>
           <TouchableOpacity 
             style={styles.viewDetailsButton}
-            onPress={() => setSelectedWorkout(workout)}
+            onPress={() => {
+              setSelectedWorkout(workout);
+              setShowWorkoutModal(true);
+            }}
           >
+            <Eye size={16} color="#7F8C8D" />
             <Text style={styles.viewDetailsText}>View Details</Text>
           </TouchableOpacity>
           
@@ -589,6 +662,164 @@ export default function AIFitnessPlanScreen() {
           </View>
         </LinearGradient>
       </View>
+
+      {/* Workout Details Modal */}
+      <Modal
+        visible={showWorkoutModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowWorkoutModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{selectedWorkout?.title}</Text>
+            <TouchableOpacity 
+              onPress={() => setShowWorkoutModal(false)}
+              style={styles.closeButton}
+            >
+              <X size={24} color="#7F8C8D" />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            {selectedWorkout && (
+              <>
+                <View style={styles.workoutOverview}>
+                  <Text style={styles.workoutModalDescription}>{selectedWorkout.description}</Text>
+                  
+                  <View style={styles.workoutStats}>
+                    <View style={styles.statItem}>
+                      <Clock size={20} color="#FF6B6B" />
+                      <Text style={styles.statItemText}>{selectedWorkout.duration} min</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Zap size={20} color="#FF6B6B" />
+                      <Text style={styles.statItemText}>{selectedWorkout.caloriesBurned} cal</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Target size={20} color="#FF6B6B" />
+                      <Text style={styles.statItemText}>{selectedWorkout.targetMuscles.join(', ')}</Text>
+                    </View>
+                  </View>
+                </View>
+                
+                <Text style={styles.exercisesTitle}>Exercises ({selectedWorkout.exercises.length})</Text>
+                
+                {selectedWorkout.exercises.map((exercise, index) => (
+                  <TouchableOpacity 
+                    key={index} 
+                    style={styles.exerciseCard}
+                    onPress={() => {
+                      setSelectedExercise(exercise);
+                      setShowExerciseModal(true);
+                    }}
+                  >
+                    <Image source={{ uri: exercise.imageUrl }} style={styles.exerciseImage} />
+                    <View style={styles.exerciseInfo}>
+                      <View style={styles.exerciseHeader}>
+                        <Text style={styles.exerciseName}>{exercise.name}</Text>
+                        <View style={[styles.exerciseDifficultyBadge, { backgroundColor: exercise.difficulty === 'Easy' ? '#27AE60' : exercise.difficulty === 'Medium' ? '#F39C12' : '#E74C3C' }]}>
+                          <Text style={styles.exerciseDifficultyText}>{exercise.difficulty}</Text>
+                        </View>
+                      </View>
+                      
+                      <Text style={styles.exerciseInstructions}>{exercise.instructions}</Text>
+                      
+                      <View style={styles.exerciseMeta}>
+                        <View style={styles.exerciseMetaItem}>
+                          <Repeat size={16} color="#7F8C8D" />
+                          <Text style={styles.exerciseMetaText}>{exercise.sets} sets × {exercise.reps}</Text>
+                        </View>
+                        <View style={styles.exerciseMetaItem}>
+                          <Timer size={16} color="#7F8C8D" />
+                          <Text style={styles.exerciseMetaText}>{exercise.restTime}s rest</Text>
+                        </View>
+                      </View>
+                      
+                      <Text style={styles.targetMuscles}>Targets: {exercise.targetMuscles.join(', ')}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+                
+                <TouchableOpacity 
+                  style={styles.startWorkoutButton}
+                  onPress={() => {
+                    setShowWorkoutModal(false);
+                    startWorkout(selectedWorkout);
+                  }}
+                >
+                  <Play size={24} color="white" />
+                  <Text style={styles.startWorkoutButtonText}>Start Workout</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Exercise Details Modal */}
+      <Modal
+        visible={showExerciseModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowExerciseModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{selectedExercise?.name}</Text>
+            <TouchableOpacity 
+              onPress={() => setShowExerciseModal(false)}
+              style={styles.closeButton}
+            >
+              <X size={24} color="#7F8C8D" />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            {selectedExercise && (
+              <>
+                <Image source={{ uri: selectedExercise.imageUrl }} style={styles.exerciseDetailImage} />
+                
+                <View style={styles.exerciseDetailInfo}>
+                  <View style={styles.exerciseDetailHeader}>
+                    <View style={[styles.exerciseDifficultyBadge, { backgroundColor: selectedExercise.difficulty === 'Easy' ? '#27AE60' : selectedExercise.difficulty === 'Medium' ? '#F39C12' : '#E74C3C' }]}>
+                      <Text style={styles.exerciseDifficultyText}>{selectedExercise.difficulty}</Text>
+                    </View>
+                    <Text style={styles.targetMusclesDetail}>Targets: {selectedExercise.targetMuscles.join(', ')}</Text>
+                  </View>
+                  
+                  <Text style={styles.exerciseDetailInstructions}>{selectedExercise.instructions}</Text>
+                  
+                  <View style={styles.exerciseDetailMeta}>
+                    <View style={styles.exerciseDetailMetaItem}>
+                      <Repeat size={20} color="#FF6B6B" />
+                      <Text style={styles.exerciseDetailMetaText}>{selectedExercise.sets} sets × {selectedExercise.reps}</Text>
+                    </View>
+                    <View style={styles.exerciseDetailMetaItem}>
+                      <Timer size={20} color="#FF6B6B" />
+                      <Text style={styles.exerciseDetailMetaText}>{selectedExercise.restTime}s rest</Text>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.tipsSection}>
+                    <Text style={styles.tipsSectionTitle}>💡 Pro Tips</Text>
+                    {selectedExercise.tips.map((tip, index) => (
+                      <Text key={index} style={styles.tipItem}>• {tip}</Text>
+                    ))}
+                  </View>
+                  
+                  <View style={styles.mistakesSection}>
+                    <Text style={styles.mistakesSectionTitle}>⚠️ Common Mistakes</Text>
+                    {selectedExercise.commonMistakes.map((mistake, index) => (
+                      <Text key={index} style={styles.mistakeItem}>• {mistake}</Text>
+                    ))}
+                  </View>
+                </View>
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -823,6 +1054,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#7F8C8D',
+    marginLeft: 6,
   },
   startButton: {
     flex: 1,
@@ -938,5 +1170,277 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  exercisePreview: {
+    marginTop: 8,
+  },
+  exercisePreviewItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    padding: 8,
+  },
+  exercisePreviewImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  exercisePreviewInfo: {
+    flex: 1,
+  },
+  exercisePreviewName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  exercisePreviewMeta: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginBottom: 4,
+  },
+  difficultyContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  difficultyDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 4,
+  },
+  difficultyLabel: {
+    fontSize: 10,
+    color: '#7F8C8D',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E9ECEF',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    flex: 1,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  workoutOverview: {
+    marginBottom: 24,
+  },
+  workoutModalDescription: {
+    fontSize: 16,
+    color: '#7F8C8D',
+    marginBottom: 16,
+    lineHeight: 24,
+  },
+  workoutStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 16,
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statItemText: {
+    fontSize: 12,
+    color: '#2C3E50',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  exercisesTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 16,
+  },
+  exerciseCard: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  exerciseImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 16,
+  },
+  exerciseInfo: {
+    flex: 1,
+  },
+  exerciseHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  exerciseName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    flex: 1,
+    marginRight: 8,
+  },
+  exerciseDifficultyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  exerciseDifficultyText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  exerciseInstructions: {
+    fontSize: 14,
+    color: '#7F8C8D',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  exerciseMeta: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  exerciseMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  exerciseMetaText: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginLeft: 4,
+  },
+  targetMuscles: {
+    fontSize: 12,
+    color: '#FF6B6B',
+    fontWeight: '600',
+  },
+  startWorkoutButton: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  startWorkoutButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  exerciseDetailImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  exerciseDetailInfo: {
+    flex: 1,
+  },
+  exerciseDetailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  targetMusclesDetail: {
+    fontSize: 14,
+    color: '#FF6B6B',
+    fontWeight: '600',
+  },
+  exerciseDetailInstructions: {
+    fontSize: 16,
+    color: '#2C3E50',
+    lineHeight: 24,
+    marginBottom: 20,
+  },
+  exerciseDetailMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  exerciseDetailMetaItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  exerciseDetailMetaText: {
+    fontSize: 14,
+    color: '#2C3E50',
+    marginTop: 4,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  tipsSection: {
+    backgroundColor: '#E8F5E8',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  tipsSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#27AE60',
+    marginBottom: 12,
+  },
+  tipItem: {
+    fontSize: 14,
+    color: '#2C3E50',
+    marginBottom: 6,
+    lineHeight: 20,
+  },
+  mistakesSection: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  mistakesSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#F39C12',
+    marginBottom: 12,
+  },
+  mistakeItem: {
+    fontSize: 14,
+    color: '#2C3E50',
+    marginBottom: 6,
+    lineHeight: 20,
   },
 });
