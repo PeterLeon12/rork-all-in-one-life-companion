@@ -1,118 +1,69 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { 
   Home, 
   ChefHat, 
-  Palette as PaletteIcon, 
   Sparkles,
   CheckCircle,
-  Clock,
   Star,
   Plus,
-  TrendingUp,
-  Award,
-  Calendar,
-  Target
+  MessageCircle
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
 const lifestyleMetrics = [
-  { label: 'Home Projects', value: '8', icon: Home, color: '#55A3FF' },
-  { label: 'Recipes Tried', value: '23', icon: ChefHat, color: '#003D82' },
-  { label: 'Organization Score', value: '87%', icon: Sparkles, color: '#74B9FF' },
-  { label: 'Life Quality', value: '92%', icon: Star, color: '#0984E3' }
+  { label: 'Home Score', value: '89%', icon: Home, color: '#55A3FF' },
+  { label: 'Organization', value: '92%', icon: Sparkles, color: '#74B9FF' },
+  { label: 'Meal Planning', value: '85%', icon: ChefHat, color: '#003D82' },
+  { label: 'Life Quality', value: '94%', icon: Star, color: '#0984E3' }
 ];
 
-const homeProjects = [
+const activeProjects = [
   {
-    title: 'Living Room Makeover',
-    category: 'Interior Design',
+    title: 'Living Room Refresh',
     progress: 75,
-    timeSpent: '18h',
     deadline: '2 weeks',
-    color: '#55A3FF',
-    tasks: ['Paint walls', 'New furniture', 'Lighting setup']
+    color: '#55A3FF'
   },
   {
     title: 'Kitchen Organization',
-    category: 'Organization',
     progress: 90,
-    timeSpent: '6h',
     deadline: '3 days',
-    color: '#74B9FF',
-    tasks: ['Pantry sorting', 'Cabinet labels', 'Spice rack']
-  },
-  {
-    title: 'Garden Planning',
-    category: 'Outdoor',
-    progress: 45,
-    timeSpent: '12h',
-    deadline: '1 month',
-    color: '#003D82',
-    tasks: ['Soil prep', 'Plant selection', 'Layout design']
+    color: '#74B9FF'
   }
 ];
 
-const weeklyMeals = [
-  {
-    day: 'Monday',
-    breakfast: 'Overnight Oats',
-    lunch: 'Quinoa Salad',
-    dinner: 'Grilled Salmon',
-    prep: true
-  },
-  {
-    day: 'Tuesday',
-    breakfast: 'Smoothie Bowl',
-    lunch: 'Leftover Salmon',
-    dinner: 'Pasta Primavera',
-    prep: false
-  },
-  {
-    day: 'Wednesday',
-    breakfast: 'Avocado Toast',
-    lunch: 'Soup & Sandwich',
-    dinner: 'Stir Fry',
-    prep: true
-  },
-  {
-    day: 'Thursday',
-    breakfast: 'Greek Yogurt',
-    lunch: 'Buddha Bowl',
-    dinner: 'Tacos',
-    prep: false
-  }
-];
+const todaysMeals = {
+  breakfast: 'Overnight Oats',
+  lunch: 'Quinoa Salad',
+  dinner: 'Grilled Salmon'
+};
 
-const organizationTasks = [
-  { area: 'Bedroom', task: 'Declutter closet', completed: true, priority: 'high' },
-  { area: 'Kitchen', task: 'Organize spice rack', completed: true, priority: 'medium' },
-  { area: 'Office', task: 'File documents', completed: false, priority: 'high' },
-  { area: 'Bathroom', task: 'Medicine cabinet', completed: false, priority: 'low' },
-  { area: 'Living Room', task: 'Arrange books', completed: true, priority: 'medium' }
+const weeklyStats = {
+  mealsPlanned: 18,
+  recipesCooked: 5,
+  mealPrepDays: 2
+};
+
+const todaysTasks = [
+  { task: 'File documents', area: 'Office', completed: false },
+  { task: 'Organize spice rack', area: 'Kitchen', completed: true },
+  { task: 'Arrange books', area: 'Living Room', completed: true }
 ];
 
 const lifestyleGoals = [
   {
-    title: 'Sustainable Living',
-    description: 'Reduce waste and live more eco-friendly',
-    progress: 68,
-    actions: ['Composting', 'Reusable containers', 'Energy saving']
-  },
-  {
-    title: 'Minimalist Approach',
-    description: 'Simplify possessions and focus on essentials',
+    title: 'Organized Home',
     progress: 82,
-    actions: ['Decluttering', 'Quality over quantity', 'Mindful purchases']
+    target: 'Complete by month end'
   },
   {
-    title: 'Cozy Home Atmosphere',
-    description: 'Create a warm and welcoming living space',
+    title: 'Healthy Meal Planning',
     progress: 91,
-    actions: ['Soft lighting', 'Plants', 'Comfortable textiles']
+    target: '5 days per week'
   }
 ];
 
@@ -139,14 +90,9 @@ export default function LifestyleScreen() {
         <View style={styles.projectHeader}>
           <View style={styles.projectInfo}>
             <Text style={styles.projectTitle}>{project.title}</Text>
-            <Text style={styles.projectCategory}>{project.category}</Text>
-            <Text style={styles.projectMeta}>
-              {project.timeSpent} spent • Due in {project.deadline}
-            </Text>
+            <Text style={styles.projectMeta}>Due in {project.deadline}</Text>
           </View>
-          <View style={styles.projectProgress}>
-            <Text style={styles.progressPercentage}>{project.progress}%</Text>
-          </View>
+          <Text style={styles.progressPercentage}>{project.progress}%</Text>
         </View>
         
         <View style={styles.progressContainer}>
@@ -159,51 +105,24 @@ export default function LifestyleScreen() {
             />
           </View>
         </View>
-        
-        <View style={styles.tasksList}>
-          {project.tasks.map((task: string, taskIndex: number) => (
-            <View key={taskIndex} style={styles.taskItem}>
-              <CheckCircle size={12} color={project.color} />
-              <Text style={styles.taskText}>{task}</Text>
-            </View>
-          ))}
-        </View>
       </View>
     );
   };
 
-  const renderMealDay = (meal: any, index: number) => {
+  const renderMealCard = () => {
     return (
-      <View key={index} style={styles.mealCard}>
-        <View style={styles.mealHeader}>
-          <Text style={styles.mealDay}>{meal.day}</Text>
-          {meal.prep && (
-            <View style={styles.prepBadge}>
-              <Text style={styles.prepText}>Prep Day</Text>
-            </View>
-          )}
-        </View>
+      <View style={styles.mealCard}>
+        <Text style={styles.mealTitle}>Today&apos;s Meals</Text>
         <View style={styles.mealsList}>
-          <Text style={styles.mealItem}>🌅 {meal.breakfast}</Text>
-          <Text style={styles.mealItem}>☀️ {meal.lunch}</Text>
-          <Text style={styles.mealItem}>🌙 {meal.dinner}</Text>
+          <Text style={styles.mealItem}>🌅 {todaysMeals.breakfast}</Text>
+          <Text style={styles.mealItem}>☀️ {todaysMeals.lunch}</Text>
+          <Text style={styles.mealItem}>🌙 {todaysMeals.dinner}</Text>
         </View>
       </View>
     );
   };
 
-  const renderOrganizationTask = (task: any, index: number) => {
-    const getPriorityColor = (priority: string) => {
-      switch (priority) {
-        case 'high': return '#FF6B6B';
-        case 'medium': return '#FFD93D';
-        case 'low': return '#4ECDC4';
-        default: return '#7F8C8D';
-      }
-    };
-
-    const priorityColor = getPriorityColor(task.priority);
-    
+  const renderTask = (task: any, index: number) => {
     return (
       <View key={index} style={[styles.taskCard, task.completed && styles.completedTask]}>
         <TouchableOpacity style={styles.taskCheckbox}>
@@ -218,45 +137,32 @@ export default function LifestyleScreen() {
           <Text style={[styles.taskTitle, task.completed && styles.completedText]}>
             {task.task}
           </Text>
-          <View style={styles.taskMeta}>
-            <Text style={styles.taskArea}>{task.area}</Text>
-            <View style={[styles.priorityBadge, { backgroundColor: priorityColor + '20' }]}>
-              <Text style={[styles.priorityText, { color: priorityColor }]}>
-                {task.priority}
-              </Text>
-            </View>
-          </View>
+          <Text style={styles.taskArea}>{task.area}</Text>
         </View>
       </View>
     );
   };
 
-  const renderLifestyleGoal = (goal: any, index: number) => {
+  const renderGoal = (goal: any, index: number) => {
     const progressWidth = (width - 72) * (goal.progress / 100);
     
     return (
       <View key={index} style={styles.goalCard}>
-        <Text style={styles.goalTitle}>{goal.title}</Text>
-        <Text style={styles.goalDescription}>{goal.description}</Text>
+        <View style={styles.goalHeader}>
+          <Text style={styles.goalTitle}>{goal.title}</Text>
+          <Text style={styles.goalProgress}>{goal.progress}%</Text>
+        </View>
+        <Text style={styles.goalTarget}>{goal.target}</Text>
         
-        <View style={styles.goalProgress}>
-          <View style={styles.goalProgressBar}>
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
             <View 
               style={[
-                styles.goalProgressFill, 
+                styles.progressFill, 
                 { width: progressWidth, backgroundColor: '#55A3FF' }
               ]} 
             />
           </View>
-          <Text style={styles.goalProgressText}>{goal.progress}%</Text>
-        </View>
-        
-        <View style={styles.actionsList}>
-          {goal.actions.map((action: string, actionIndex: number) => (
-            <View key={actionIndex} style={styles.actionItem}>
-              <Text style={styles.actionText}>• {action}</Text>
-            </View>
-          ))}
         </View>
       </View>
     );
@@ -274,7 +180,7 @@ export default function LifestyleScreen() {
       />
       
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header Stats */}
+        {/* Header */}
         <View style={styles.headerCard}>
           <LinearGradient
             colors={['#55A3FF', '#003D82']}
@@ -284,78 +190,74 @@ export default function LifestyleScreen() {
           >
             <View style={styles.headerContent}>
               <Home size={32} color="white" />
-              <Text style={styles.headerTitle}>Lifestyle Score</Text>
-              <Text style={styles.headerScore}>89/100</Text>
-              <Text style={styles.headerSubtitle}>Creating your perfect home</Text>
+              <Text style={styles.headerTitle}>Lifestyle</Text>
+              <Text style={styles.headerScore}>89%</Text>
+              <Text style={styles.headerSubtitle}>Home & Life Balance</Text>
             </View>
+            
+            <TouchableOpacity 
+              style={styles.chatButton}
+              onPress={() => router.push('/lifestyle-chat')}
+            >
+              <MessageCircle size={20} color="white" />
+              <Text style={styles.chatButtonText}>Get Advice</Text>
+            </TouchableOpacity>
           </LinearGradient>
         </View>
 
-        {/* Lifestyle Metrics */}
+        {/* Overview */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Home Overview</Text>
+          <Text style={styles.sectionTitle}>Overview</Text>
           <View style={styles.metricsGrid}>
             {lifestyleMetrics.map(renderMetricCard)}
           </View>
         </View>
 
-        {/* Home Projects */}
+        {/* Active Projects */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Active Projects</Text>
             <TouchableOpacity style={styles.addButton}>
-              <Plus size={20} color="#667eea" />
+              <Plus size={20} color="#55A3FF" />
             </TouchableOpacity>
           </View>
-          {homeProjects.map(renderProject)}
+          {activeProjects.map(renderProject)}
         </View>
 
-        {/* Meal Planning */}
+        {/* Today's Meals */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week's Meals</Text>
-          <View style={styles.mealsContainer}>
-            {weeklyMeals.map(renderMealDay)}
-          </View>
-        </View>
-
-        {/* Organization Tasks */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Organization Checklist</Text>
-          {organizationTasks.map(renderOrganizationTask)}
-        </View>
-
-        {/* Lifestyle Goals */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Lifestyle Goals</Text>
-          {lifestyleGoals.map(renderLifestyleGoal)}
-        </View>
-
-        {/* Weekly Progress */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week's Progress</Text>
-          <View style={styles.progressCard}>
-            <View style={styles.progressHeader}>
-              <TrendingUp size={24} color="#55A3FF" />
-              <Text style={styles.progressTitle}>Home Improvement</Text>
-            </View>
-            <Text style={styles.progressText}>
-              Great week for home projects! You completed 3 organization tasks and made significant progress on your living room makeover. Your home is becoming more beautiful and functional.
-            </Text>
-            <View style={styles.progressStats}>
-              <View style={styles.progressStat}>
-                <Text style={styles.progressStatValue}>3</Text>
-                <Text style={styles.progressStatLabel}>Tasks Done</Text>
+          <Text style={styles.sectionTitle}>Today&apos;s Meals</Text>
+          {renderMealCard()}
+          
+          <View style={styles.weeklyStatsCard}>
+            <Text style={styles.statsTitle}>This Week</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{weeklyStats.mealsPlanned}</Text>
+                <Text style={styles.statLabel}>Meals Planned</Text>
               </View>
-              <View style={styles.progressStat}>
-                <Text style={styles.progressStatValue}>15h</Text>
-                <Text style={styles.progressStatLabel}>Project Time</Text>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{weeklyStats.recipesCooked}</Text>
+                <Text style={styles.statLabel}>Recipes Cooked</Text>
               </View>
-              <View style={styles.progressStat}>
-                <Text style={styles.progressStatValue}>+12%</Text>
-                <Text style={styles.progressStatLabel}>Organization</Text>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{weeklyStats.mealPrepDays}</Text>
+                <Text style={styles.statLabel}>Prep Days</Text>
               </View>
             </View>
           </View>
+        </View>
+
+        {/* Today's Tasks */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Today&apos;s Tasks</Text>
+          {todaysTasks.map(renderTask)}
+        </View>
+
+        {/* Goals */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Goals</Text>
+          {lifestyleGoals.map(renderGoal)}
         </View>
       </ScrollView>
     </>
@@ -390,6 +292,21 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: 'bold',
     marginTop: 8,
+  },
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 16,
+    gap: 8,
+  },
+  chatButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
   headerSubtitle: {
     color: 'white',
@@ -492,17 +409,9 @@ const styles = StyleSheet.create({
     color: '#2C3E50',
     marginBottom: 4,
   },
-  projectCategory: {
-    fontSize: 14,
-    color: '#667eea',
-    marginBottom: 8,
-  },
   projectMeta: {
     fontSize: 12,
     color: '#7F8C8D',
-  },
-  projectProgress: {
-    alignItems: 'center',
   },
   progressPercentage: {
     fontSize: 18,
@@ -534,45 +443,58 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#7F8C8D',
   },
-  mealsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 24,
-    justifyContent: 'space-between',
-  },
   mealCard: {
     backgroundColor: 'white',
-    width: (width - 60) / 2,
-    padding: 16,
+    marginHorizontal: 24,
+    marginBottom: 16,
     borderRadius: 16,
-    marginBottom: 12,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
-  mealHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  mealDay: {
+  mealTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#2C3E50',
+    marginBottom: 16,
   },
-  prepBadge: {
-    backgroundColor: '#4ECDC420',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+  weeklyStatsCard: {
+    backgroundColor: 'white',
+    marginHorizontal: 24,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  prepText: {
-    fontSize: 10,
-    color: '#4ECDC4',
-    fontWeight: '600',
+  statsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 16,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#55A3FF',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginTop: 4,
+    textAlign: 'center',
   },
   mealsList: {
     gap: 8,
@@ -622,24 +544,10 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
     color: '#7F8C8D',
   },
-  taskMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
   taskArea: {
     fontSize: 12,
-    color: '#667eea',
-  },
-  priorityBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  priorityText: {
-    fontSize: 10,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    color: '#7F8C8D',
+    marginTop: 2,
   },
   goalCard: {
     backgroundColor: 'white',
@@ -653,94 +561,26 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  goalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   goalTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#2C3E50',
-    marginBottom: 4,
-  },
-  goalDescription: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    lineHeight: 20,
-    marginBottom: 16,
   },
   goalProgress: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  goalProgressBar: {
-    flex: 1,
-    height: 6,
-    backgroundColor: '#E9ECEF',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginRight: 12,
-  },
-  goalProgressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  goalProgressText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2C3E50',
-  },
-  actionsList: {
-    gap: 4,
-  },
-  actionItem: {
-    marginLeft: 8,
-  },
-  actionText: {
-    fontSize: 12,
-    color: '#7F8C8D',
-  },
-  progressCard: {
-    backgroundColor: 'white',
-    marginHorizontal: 24,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  progressTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2C3E50',
-    marginLeft: 12,
+    color: '#55A3FF',
   },
-  progressText: {
+  goalTarget: {
     fontSize: 14,
     color: '#7F8C8D',
-    lineHeight: 20,
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  progressStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  progressStat: {
-    alignItems: 'center',
-  },
-  progressStatValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-  },
-  progressStatLabel: {
-    fontSize: 12,
-    color: '#7F8C8D',
-    marginTop: 4,
-    textAlign: 'center',
-  },
+
 });
