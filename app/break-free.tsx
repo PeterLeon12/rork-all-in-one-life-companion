@@ -12,7 +12,10 @@ import {
   BookOpen,
   Phone,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  TrendingUp,
+  Calendar,
+  Star
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -203,6 +206,24 @@ export default function BreakFreeScreen() {
               <Text style={styles.headerTitle}>Freedom Journey</Text>
               <Text style={styles.headerScore}>{sobrietyDays} Days</Text>
               <Text style={styles.headerSubtitle}>Clean & Strong</Text>
+              
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <TrendingUp size={16} color="white" />
+                  <Text style={styles.statValue}>{Math.round((completedTasks / tasks.length) * 100)}%</Text>
+                  <Text style={styles.statLabel}>Daily Goal</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Calendar size={16} color="white" />
+                  <Text style={styles.statValue}>{recoveryMilestones.filter(m => m.achieved).length}</Text>
+                  <Text style={styles.statLabel}>Milestones</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Star size={16} color="white" />
+                  <Text style={styles.statValue}>{totalPoints}</Text>
+                  <Text style={styles.statLabel}>Points</Text>
+                </View>
+              </View>
               
               <TouchableOpacity 
                 style={styles.aiChatButton}
@@ -578,5 +599,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statValue: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  statLabel: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+    marginTop: 2,
   },
 });
