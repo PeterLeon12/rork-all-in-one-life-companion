@@ -1097,12 +1097,7 @@ export default function HealthScreen() {
               };
               addActivity(activityData);
               
-              // Show encouraging message
-              Alert.alert(
-                '🎉 Goal Completed!',
-                `Great job completing "${completedGoal.title}"! Every small step counts towards a healthier you.`,
-                [{ text: 'Keep Going!', style: 'default' }]
-              );
+
             }, 100);
           }
         }
