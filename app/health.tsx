@@ -163,7 +163,17 @@ export default function HealthScreen() {
       const savedResetDate = await AsyncStorage.getItem('healthResetDate');
       
       if (savedMetrics) {
-        setHealthMetrics(JSON.parse(savedMetrics));
+        const parsedMetrics = JSON.parse(savedMetrics);
+        // Restore icon components that were lost during serialization
+        const initialMetrics = getInitialHealthMetrics();
+        const restoredMetrics = parsedMetrics.map((metric: any) => {
+          const initialMetric = initialMetrics.find(m => m.id === metric.id);
+          return {
+            ...metric,
+            icon: initialMetric?.icon || Activity // fallback to Activity icon
+          };
+        });
+        setHealthMetrics(restoredMetrics);
       }
       
       if (savedStreak) {
@@ -180,7 +190,12 @@ export default function HealthScreen() {
 
   const saveHealthData = async () => {
     try {
-      await AsyncStorage.setItem('healthMetrics', JSON.stringify(healthMetrics));
+      // Remove icon components before saving to avoid serialization issues
+      const metricsToSave = healthMetrics.map(metric => ({
+        ...metric,
+        icon: undefined // Remove the icon component
+      }));
+      await AsyncStorage.setItem('healthMetrics', JSON.stringify(metricsToSave));
       await AsyncStorage.setItem('healthStreak', dailyStreak.toString());
       await AsyncStorage.setItem('healthResetDate', lastResetDate);
     } catch (error) {
