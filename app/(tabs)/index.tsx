@@ -13,12 +13,9 @@ import {
   TrendingUp,
   Sparkles,
   Palette,
-  Zap,
-  Coffee,
   Dumbbell,
   ShieldCheck,
-  MapPin,
-  HandHeart
+  MapPin
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -40,115 +37,75 @@ interface CategoryCard {
 const categories: CategoryCard[] = [
   {
     id: 'health',
-    title: 'Health',
-    subtitle: 'Mind & Body Wellness',
+    title: 'Health & Fitness',
+    subtitle: 'Complete Physical Wellness',
     icon: Heart,
     gradient: ['#FF6B6B', '#FF8E8E'] as [string, string],
     route: '/health'
   },
   {
-    id: 'fitness',
-    title: 'Fitness',
-    subtitle: 'Sports & Training',
-    icon: Dumbbell,
-    gradient: ['#FF7675', '#E17055'] as [string, string],
-    route: '/fitness'
-  },
-  {
     id: 'wealth',
-    title: 'Wealth',
-    subtitle: 'Career & Finance',
+    title: 'Wealth & Career',
+    subtitle: 'Financial & Professional Growth',
     icon: DollarSign,
     gradient: ['#4ECDC4', '#44A08D'] as [string, string],
     route: '/wealth'
   },
   {
     id: 'relationships',
-    title: 'Relationships',
-    subtitle: 'Family & Connection',
+    title: 'Relationships & Family',
+    subtitle: 'Connection & Love',
     icon: Users,
     gradient: ['#A8E6CF', '#7FCDCD'] as [string, string],
     route: '/relationships'
   },
   {
     id: 'confidence',
-    title: 'Confidence',
-    subtitle: 'Inner Strength',
+    title: 'Confidence & Freedom',
+    subtitle: 'Inner Strength & Breaking Limits',
     icon: Shield,
     gradient: ['#FFD93D', '#FF9F43'] as [string, string],
     route: '/confidence'
   },
   {
     id: 'learning',
-    title: 'Learning',
-    subtitle: 'Education & Growth',
+    title: 'Learning & Education',
+    subtitle: 'Knowledge & Skill Growth',
     icon: BookOpen,
     gradient: ['#6C5CE7', '#A29BFE'] as [string, string],
     route: '/learning'
   },
   {
     id: 'productivity',
-    title: 'Productivity',
-    subtitle: 'Goals & Habits',
+    title: 'Productivity & Goals',
+    subtitle: 'Achievement & Focus',
     icon: Target,
     gradient: ['#FD79A8', '#E84393'] as [string, string],
     route: '/productivity'
   },
   {
     id: 'mindfulness',
-    title: 'Mindfulness',
-    subtitle: 'Inner Peace',
+    title: 'Mindfulness & Creativity',
+    subtitle: 'Inner Peace & Expression',
     icon: Brain,
-    gradient: ['#9B59B6', '#8E44AD'] as [string, string],
+    gradient: ['#74B9FF', '#0984E3'] as [string, string],
     route: '/mindfulness'
   },
   {
-    id: 'creativity',
-    title: 'Creativity',
-    subtitle: 'Arts & Expression',
-    icon: Palette,
-    gradient: ['#E67E22', '#D35400'] as [string, string],
-    route: '/creativity'
-  },
-  {
-    id: 'energy',
-    title: 'Energy',
-    subtitle: 'Vitality & Focus',
-    icon: Zap,
-    gradient: ['#F39C12', '#E67E22'] as [string, string],
-    route: '/energy'
-  },
-  {
     id: 'lifestyle',
-    title: 'Lifestyle',
-    subtitle: 'Home & Balance',
-    icon: Coffee,
-    gradient: ['#16A085', '#1ABC9C'] as [string, string],
+    title: 'Home & Lifestyle',
+    subtitle: 'Living & Organization',
+    icon: Home,
+    gradient: ['#55A3FF', '#003D82'] as [string, string],
     route: '/lifestyle'
   },
   {
-    id: 'break-free',
-    title: 'Break Free',
-    subtitle: 'Habit Freedom',
-    icon: ShieldCheck,
-    gradient: ['#00B894', '#55A3FF'] as [string, string],
-    route: '/break-free'
-  },
-  {
     id: 'travel',
-    title: 'Travel',
-    subtitle: 'Adventure & Culture',
+    title: 'Travel & Community',
+    subtitle: 'Adventure & Service',
     icon: MapPin,
     gradient: ['#FF9500', '#FF5722'] as [string, string],
     route: '/travel'
-  },
-  {
-    id: 'community',
-    title: 'Community',
-    subtitle: 'Service & Impact',
-    icon: HandHeart,
-    gradient: ['#8BC34A', '#4CAF50'] as [string, string],
-    route: '/community'
   }
 ];
 
@@ -171,76 +128,76 @@ const quickActions = [
   { 
     title: 'Quick Workout', 
     icon: Dumbbell, 
-    color: '#E17055',
-    action: () => router.push('/fitness')
+    color: '#FF6B6B',
+    action: () => router.push('/health')
   },
   { 
     title: 'Meditation', 
     icon: Brain, 
-    color: '#6C5CE7',
+    color: '#74B9FF',
     action: () => router.push('/mindfulness')
   },
   { 
     title: 'Goal Progress', 
     icon: Target, 
-    color: '#4ECDC4',
+    color: '#FD79A8',
     action: () => router.push('/progress')
   },
   { 
     title: 'Quick Journal', 
     icon: BookOpen, 
-    color: '#FFD93D',
+    color: '#6C5CE7',
     action: () => router.push('/learning')
   },
   { 
     title: 'Money Check', 
     icon: DollarSign, 
-    color: '#44A08D',
+    color: '#4ECDC4',
     action: () => router.push('/wealth')
   },
   { 
     title: 'Connect', 
     icon: Users, 
-    color: '#7FCDCD',
+    color: '#A8E6CF',
     action: () => router.push('/relationships')
   },
   { 
     title: 'Create', 
     icon: Palette, 
-    color: '#D35400',
-    action: () => router.push('/creativity')
+    color: '#74B9FF',
+    action: () => router.push('/mindfulness')
   },
   { 
-    title: 'Energy Boost', 
-    icon: Zap, 
-    color: '#E67E22',
-    action: () => router.push('/energy')
+    title: 'Home Organize', 
+    icon: Home, 
+    color: '#55A3FF',
+    action: () => router.push('/lifestyle')
   },
   { 
     title: 'Break Habit', 
     icon: ShieldCheck, 
-    color: '#00B894',
-    action: () => router.push('/break-free')
+    color: '#FFD93D',
+    action: () => router.push('/confidence')
   }
 ];
 
 // Helper function to get readable category names
 const getCategoryName = (key: string): string => {
   const nameMap: Record<string, string> = {
-    health: 'Health',
-    fitness: 'Fitness', 
-    wealth: 'Wealth',
-    relationships: 'Relationships',
-    confidence: 'Confidence',
-    learning: 'Learning',
-    productivity: 'Productivity',
-    mindfulness: 'Mindfulness',
-    creativity: 'Creativity',
-    energy: 'Energy',
-    lifestyle: 'Lifestyle',
-    breakFree: 'Break Free',
-    travel: 'Travel',
-    community: 'Community'
+    health: 'Health & Fitness',
+    fitness: 'Health & Fitness', // Legacy - now combined with health
+    wealth: 'Wealth & Career',
+    relationships: 'Relationships & Family',
+    confidence: 'Confidence & Freedom',
+    learning: 'Learning & Education',
+    productivity: 'Productivity & Goals',
+    mindfulness: 'Mindfulness & Creativity',
+    creativity: 'Mindfulness & Creativity', // Legacy - now combined with mindfulness
+    energy: 'Health & Fitness', // Legacy - now combined with health
+    lifestyle: 'Home & Lifestyle',
+    breakFree: 'Confidence & Freedom', // Legacy - now combined with confidence
+    travel: 'Travel & Community',
+    community: 'Travel & Community' // Legacy - now combined with travel
   };
   return nameMap[key] || key;
 };
