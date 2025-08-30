@@ -1,99 +1,274 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, TextInput } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Stack, router } from 'expo-router';
 import { 
   MapPin, 
   Camera, 
   Globe, 
-  Plane, 
-  MessageCircle, 
-  TrendingUp,
+  MessageCircle,
   Calendar,
   Star,
   Users,
-  Book
+  Book,
+  Compass,
+  Heart
 } from 'lucide-react-native';
-import { Stack } from 'expo-router';
-import { useCategoryData } from '@/contexts/CategoryContext';
+import * as Haptics from 'expo-haptics';
 
-interface TravelFeature {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ComponentType<any>;
-  color: string;
-  route?: string;
-}
+const { width } = Dimensions.get('window');
 
-const travelFeatures: TravelFeature[] = [
+const travelMetrics = [
+  { label: 'Adventure Score', value: '92%', icon: Compass, color: '#FF6B35', trend: '+15%' },
+  { label: 'Countries Visited', value: '12', icon: Globe, color: '#4ECDC4', trend: '+2' },
+  { label: 'Cultural Immersion', value: '88%', icon: Heart, color: '#45B7D1', trend: '+8%' },
+  { label: 'Memories Created', value: '247', icon: Camera, color: '#96CEB4', trend: '+23' }
+];
+
+const upcomingTrips = [
   {
-    id: 'planning',
-    title: 'Trip Planning',
-    description: 'Plan your perfect adventure with detailed itineraries',
-    icon: Calendar,
-    color: '#FF9500',
-  },
-  {
-    id: 'cultural',
-    title: 'Cultural Exploration',
-    description: 'Discover local cultures and traditions',
+    destination: 'Tokyo, Japan',
+    date: 'March 15-22',
+    type: 'Cultural Exploration',
+    progress: 85,
     icon: Globe,
-    color: '#FF5722',
+    color: '#FF6B35'
   },
   {
-    id: 'photography',
-    title: 'Travel Photography',
-    description: 'Capture and share your travel memories',
-    icon: Camera,
-    color: '#4CAF50',
+    destination: 'Iceland Road Trip',
+    date: 'June 10-18',
+    type: 'Nature Adventure',
+    progress: 45,
+    icon: Compass,
+    color: '#4ECDC4'
   },
   {
-    id: 'language',
-    title: 'Language Learning',
-    description: 'Learn local languages for better experiences',
+    destination: 'Tuscany, Italy',
+    date: 'September 5-12',
+    type: 'Culinary Journey',
+    progress: 20,
+    icon: Heart,
+    color: '#45B7D1'
+  }
+];
+
+const travelGoals = [
+  { goal: 'Visit 3 new countries', progress: 67, target: '3 countries', current: '2 countries' },
+  { goal: 'Learn basic phrases', progress: 80, target: '5 languages', current: '4 languages' },
+  { goal: 'Cultural experiences', progress: 90, target: '20 activities', current: '18 activities' },
+  { goal: 'Photo documentation', progress: 75, target: '500 photos', current: '375 photos' }
+];
+
+const travelActivities = [
+  {
+    activity: 'Language practice',
+    time: '9:00 AM',
+    description: 'Japanese conversation - 30 min',
+    completed: true,
     icon: Book,
-    color: '#2196F3',
+    color: '#FF6B35'
   },
   {
-    id: 'social',
-    title: 'Travel Community',
-    description: 'Connect with fellow travelers and locals',
-    icon: Users,
-    color: '#9C27B0',
+    activity: 'Trip research',
+    time: '2:00 PM',
+    description: 'Tokyo neighborhoods guide',
+    completed: false,
+    icon: MapPin,
+    color: '#4ECDC4'
   },
   {
-    id: 'experiences',
-    title: 'Local Experiences',
-    description: 'Find unique activities and hidden gems',
+    activity: 'Photo editing',
+    time: '7:00 PM',
+    description: 'Last trip memories',
+    completed: false,
+    icon: Camera,
+    color: '#45B7D1'
+  },
+  {
+    activity: 'Travel planning',
+    time: '8:30 PM',
+    description: 'Book accommodations',
+    completed: false,
+    icon: Calendar,
+    color: '#96CEB4'
+  }
+];
+
+const quickActions = [
+  {
+    title: 'Plan Trip',
+    duration: '30 min',
+    benefit: 'Perfect itinerary',
+    icon: Calendar,
+    color: '#FF6B35'
+  },
+  {
+    title: 'Learn Phrases',
+    duration: '15 min',
+    benefit: 'Local connection',
+    icon: Book,
+    color: '#4ECDC4'
+  },
+  {
+    title: 'Find Experiences',
+    duration: '20 min',
+    benefit: 'Hidden gems',
     icon: Star,
-    color: '#FF6B6B',
+    color: '#45B7D1'
+  },
+  {
+    title: 'Connect Travelers',
+    duration: '10 min',
+    benefit: 'Travel buddies',
+    icon: Users,
+    color: '#96CEB4'
   }
 ];
 
 export default function TravelScreen() {
-  const { score, weeklyImprovement } = useCategoryData('travel');
-  const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
-  const [travelGoal, setTravelGoal] = useState('');
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
 
-  const renderFeatureCard = (feature: TravelFeature) => {
-    const IconComponent = feature.icon;
-    const isSelected = selectedFeature === feature.id;
+  const handleHapticFeedback = async () => {
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handleChatPress = async () => {
+    await handleHapticFeedback();
+    router.push('/travel-chat');
+  };
+
+  const renderMetricCard = (metric: any, index: number) => {
+    const IconComponent = metric.icon;
     
     return (
-      <TouchableOpacity
-        key={feature.id}
-        style={[styles.featureCard, isSelected && styles.selectedCard]}
-        onPress={() => setSelectedFeature(isSelected ? null : feature.id)}
-        activeOpacity={0.8}
-      >
-        <View style={[styles.iconContainer, { backgroundColor: feature.color + '20' }]}>
-          <IconComponent size={24} color={feature.color} />
+      <View key={index} style={styles.metricCard}>
+        <View style={[styles.metricIcon, { backgroundColor: metric.color + '20' }]}>
+          <IconComponent size={20} color={metric.color} />
         </View>
-        <View style={styles.featureContent}>
-          <Text style={styles.featureTitle}>{feature.title}</Text>
-          <Text style={styles.featureDescription}>{feature.description}</Text>
+        <Text style={styles.metricValue}>{metric.value}</Text>
+        <Text style={styles.metricLabel}>{metric.label}</Text>
+        <Text style={styles.metricTrend}>{metric.trend}</Text>
+      </View>
+    );
+  };
+
+  const renderUpcomingTrip = (trip: any, index: number) => {
+    const IconComponent = trip.icon;
+    
+    return (
+      <TouchableOpacity 
+        key={index} 
+        style={styles.tripCard}
+        activeOpacity={0.8}
+        onPress={handleHapticFeedback}
+      >
+        <View style={[styles.tripIcon, { backgroundColor: trip.color + '20' }]}>
+          <IconComponent size={20} color={trip.color} />
+        </View>
+        <View style={styles.tripContent}>
+          <Text style={styles.tripDestination}>{trip.destination}</Text>
+          <Text style={styles.tripDate}>{trip.date}</Text>
+          <Text style={styles.tripType}>{trip.type}</Text>
+        </View>
+        <View style={styles.tripProgress}>
+          <Text style={styles.tripProgressText}>{trip.progress}%</Text>
+          <View style={styles.progressBar}>
+            <View 
+              style={[
+                styles.progressBarFill, 
+                { 
+                  width: `${trip.progress}%`,
+                  backgroundColor: trip.color
+                }
+              ]} 
+            />
+          </View>
         </View>
       </TouchableOpacity>
+    );
+  };
+
+  const renderQuickAction = (action: any, index: number) => {
+    const IconComponent = action.icon;
+    const isSelected = selectedAction === action.title;
+    
+    return (
+      <TouchableOpacity 
+        key={index} 
+        style={[styles.actionCard, isSelected && styles.actionCardSelected]} 
+        activeOpacity={0.8}
+        onPress={async () => {
+          await handleHapticFeedback();
+          setSelectedAction(isSelected ? null : action.title);
+        }}
+      >
+        <View style={[styles.actionIcon, { backgroundColor: action.color + '20' }]}>
+          <IconComponent size={20} color={action.color} />
+        </View>
+        <View style={styles.actionContent}>
+          <Text style={styles.actionTitle}>{action.title}</Text>
+          <Text style={styles.actionDuration}>{action.duration}</Text>
+        </View>
+        <Text style={styles.actionBenefit}>{action.benefit}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderTravelActivity = (activity: any, index: number) => {
+    const IconComponent = activity.icon;
+    
+    return (
+      <TouchableOpacity 
+        key={index} 
+        style={[styles.activityCard, activity.completed && styles.completedActivity]}
+        activeOpacity={0.8}
+        onPress={handleHapticFeedback}
+      >
+        <View style={[styles.activityIcon, { backgroundColor: activity.color + '20' }]}>
+          <IconComponent size={16} color={activity.color} />
+        </View>
+        <View style={styles.activityContent}>
+          <Text style={styles.activityName}>{activity.activity}</Text>
+          <Text style={styles.activityDescription}>{activity.description}</Text>
+        </View>
+        <View style={styles.activityTime}>
+          <Text style={styles.activityTimeText}>{activity.time}</Text>
+          {activity.completed && (
+            <View style={styles.completedBadge}>
+              <Text style={styles.completedText}>✓</Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderTravelGoal = (goal: any, index: number) => {
+    return (
+      <View key={index} style={styles.goalCard}>
+        <View style={styles.goalHeader}>
+          <Text style={styles.goalName}>{goal.goal}</Text>
+          <Text style={styles.goalProgress}>{goal.progress}%</Text>
+        </View>
+
+        <View style={styles.progressBar}>
+          <View 
+            style={[
+              styles.progressBarFill, 
+              { 
+                width: `${goal.progress}%`,
+                backgroundColor: goal.progress >= 80 ? '#FF6B35' : goal.progress >= 60 ? '#4ECDC4' : '#45B7D1'
+              }
+            ]} 
+          />
+        </View>
+
+        <Text style={styles.goalDetail}>
+          {goal.current} / {goal.target}
+        </Text>
+      </View>
     );
   };
 
@@ -101,109 +276,72 @@ export default function TravelScreen() {
     <>
       <Stack.Screen 
         options={{ 
-          title: 'Travel & Adventure',
-          headerStyle: { backgroundColor: '#FF9500' },
+          title: "Travel & Adventure",
+          headerStyle: { backgroundColor: '#FF6B35' },
           headerTintColor: 'white',
-          headerTitleStyle: { fontWeight: 'bold' },
-          headerRight: () => (
-            <TouchableOpacity>
-              <MessageCircle size={24} color="white" />
-            </TouchableOpacity>
-          )
+          headerTitleStyle: { fontWeight: 'bold' }
         }} 
       />
       
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header Stats */}
-        <LinearGradient
-          colors={['#FF9500', '#FF5722']}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <MapPin size={24} color="white" />
-              <Text style={styles.statValue}>{score}%</Text>
-              <Text style={styles.statLabel}>Travel Score</Text>
+        <View style={styles.headerCard}>
+          <LinearGradient
+            colors={['#FF6B35', '#4ECDC4']}
+            style={styles.headerGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.headerContent}>
+              <MapPin size={32} color="white" />
+              <Text style={styles.headerTitle}>Adventure Score</Text>
+              <Text style={styles.headerScore}>92%</Text>
+              <Text style={styles.headerSubtitle}>Ready for your next journey</Text>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <TrendingUp size={24} color="white" />
-              <Text style={styles.statValue}>+{weeklyImprovement}</Text>
-              <Text style={styles.statLabel}>This Week</Text>
-            </View>
-          </View>
-        </LinearGradient>
 
-        {/* Travel Goal Input */}
+            <TouchableOpacity 
+              style={styles.chatButton}
+              onPress={handleChatPress}
+              activeOpacity={0.8}
+            >
+              <MessageCircle size={20} color="white" />
+              <Text style={styles.chatButtonText}>Travel Guide</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+
+        {/* Travel Metrics */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Set Your Travel Goal</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Where do you want to go next?"
-              value={travelGoal}
-              onChangeText={setTravelGoal}
-              multiline
-            />
+          <Text style={styles.sectionTitle}>Travel Overview</Text>
+          <View style={styles.metricsGrid}>
+            {travelMetrics.map(renderMetricCard)}
           </View>
         </View>
 
-        {/* Travel Features */}
+        {/* Upcoming Trips */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Travel & Adventure Features</Text>
-          <Text style={styles.sectionSubtitle}>
-            Explore the world and create unforgettable memories
-          </Text>
-          
-          <View style={styles.featuresContainer}>
-            {travelFeatures.map(renderFeatureCard)}
-          </View>
+          <Text style={styles.sectionTitle}>Upcoming Adventures</Text>
+          {upcomingTrips.map(renderUpcomingTrip)}
         </View>
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsContainer}>
-            <TouchableOpacity style={styles.quickAction}>
-              <Plane size={20} color="#FF9500" />
-              <Text style={styles.quickActionText}>Plan Trip</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAction}>
-              <Camera size={20} color="#FF5722" />
-              <Text style={styles.quickActionText}>Photo Journal</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAction}>
-              <Globe size={20} color="#4CAF50" />
-              <Text style={styles.quickActionText}>Explore Culture</Text>
-            </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Travel Boosters</Text>
+          <View style={styles.actionsList}>
+            {quickActions.map(renderQuickAction)}
           </View>
         </View>
 
-        {/* Travel Tips */}
+        {/* Today's Travel Activities */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Travel Tips</Text>
-          <View style={styles.tipsContainer}>
-            <View style={styles.tipCard}>
-              <Text style={styles.tipTitle}>🌍 Cultural Immersion</Text>
-              <Text style={styles.tipText}>
-                Learn basic phrases in the local language and try traditional foods
-              </Text>
-            </View>
-            <View style={styles.tipCard}>
-              <Text style={styles.tipTitle}>📸 Memory Keeping</Text>
-              <Text style={styles.tipText}>
-                Document your journey with photos and journal entries
-              </Text>
-            </View>
-            <View style={styles.tipCard}>
-              <Text style={styles.tipTitle}>🤝 Connect Locally</Text>
-              <Text style={styles.tipText}>
-                Engage with locals and fellow travelers for authentic experiences
-              </Text>
-            </View>
-          </View>
+          <Text style={styles.sectionTitle}>Today&apos;s Travel Tasks</Text>
+          {travelActivities.map(renderTravelActivity)}
+        </View>
+
+        {/* Travel Goals */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>This Year&apos;s Goals</Text>
+          {travelGoals.map(renderTravelGoal)}
         </View>
       </ScrollView>
     </>
@@ -215,153 +353,305 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  headerCard: {
+    margin: 24,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
   headerGradient: {
     padding: 24,
-  },
-  statsContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  statItem: {
+  headerContent: {
     alignItems: 'center',
-    flex: 1,
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  headerTitle: {
     color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  headerScore: {
+    color: 'white',
+    fontSize: 36,
+    fontWeight: 'bold',
     marginTop: 8,
   },
-  statLabel: {
-    fontSize: 12,
+  headerSubtitle: {
     color: 'white',
-    opacity: 0.8,
+    fontSize: 14,
+    opacity: 0.9,
     marginTop: 4,
   },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    marginHorizontal: 20,
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 16,
+  },
+  chatButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   section: {
-    padding: 24,
+    marginBottom: 32,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#2C3E50',
-    marginBottom: 8,
+    paddingHorizontal: 24,
+    marginBottom: 16,
   },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  inputContainer: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  textInput: {
-    fontSize: 16,
-    color: '#2C3E50',
-    minHeight: 60,
-    textAlignVertical: 'top',
-  },
-  featuresContainer: {
-    gap: 12,
-  },
-  featureCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+  metricsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+  },
+  metricCard: {
+    backgroundColor: 'white',
+    width: (width - 60) / 2,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  selectedCard: {
-    borderWidth: 2,
-    borderColor: '#FF9500',
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  metricIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginBottom: 12,
   },
-  featureContent: {
-    flex: 1,
-  },
-  featureTitle: {
-    fontSize: 16,
+  metricValue: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#2C3E50',
     marginBottom: 4,
   },
-  featureDescription: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    lineHeight: 20,
-  },
-  quickActionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  quickAction: {
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    flex: 1,
-    marginHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  quickActionText: {
+  metricLabel: {
     fontSize: 12,
-    color: '#2C3E50',
-    marginTop: 8,
+    color: '#7F8C8D',
     textAlign: 'center',
+    marginBottom: 4,
   },
-  tipsContainer: {
-    gap: 12,
+  metricTrend: {
+    fontSize: 10,
+    color: '#27AE60',
+    textAlign: 'center',
+    fontWeight: '600',
   },
-  tipCard: {
+  tripCard: {
     backgroundColor: 'white',
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 24,
+    marginBottom: 12,
+    borderRadius: 16,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  tipTitle: {
+  tripIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  tripContent: {
+    flex: 1,
+  },
+  tripDestination: {
     fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  tripDate: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginBottom: 2,
+  },
+  tripType: {
+    fontSize: 12,
+    color: '#FF6B35',
+    fontWeight: '600',
+  },
+  tripProgress: {
+    alignItems: 'flex-end',
+    minWidth: 60,
+  },
+  tripProgressText: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#2C3E50',
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  tipText: {
-    fontSize: 14,
+  actionsList: {
+    paddingHorizontal: 24,
+  },
+  actionCard: {
+    backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  actionCardSelected: {
+    borderWidth: 2,
+    borderColor: '#FF6B35',
+  },
+  actionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  actionContent: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  actionDuration: {
+    fontSize: 12,
     color: '#7F8C8D',
-    lineHeight: 20,
+  },
+  actionBenefit: {
+    fontSize: 12,
+    color: '#FF6B35',
+    fontWeight: '600',
+  },
+  activityCard: {
+    backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 24,
+    marginBottom: 12,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  completedActivity: {
+    opacity: 0.7,
+    borderLeftWidth: 4,
+    borderLeftColor: '#27AE60',
+  },
+  activityIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  activityContent: {
+    flex: 1,
+  },
+  activityName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  activityDescription: {
+    fontSize: 12,
+    color: '#7F8C8D',
+  },
+  activityTime: {
+    alignItems: 'flex-end',
+  },
+  activityTimeText: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginBottom: 4,
+  },
+  completedBadge: {
+    backgroundColor: '#27AE60',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  completedText: {
+    fontSize: 10,
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  goalCard: {
+    backgroundColor: 'white',
+    marginHorizontal: 24,
+    marginBottom: 12,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  goalName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+  },
+  goalProgress: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: '#E9ECEF',
+    borderRadius: 3,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  goalDetail: {
+    fontSize: 12,
+    color: '#7F8C8D',
   },
 });
