@@ -622,7 +622,10 @@ export default function HealthScreen() {
                 
                 <View style={styles.modalBody}>
                   <View style={[styles.modalIcon, { backgroundColor: selectedMetric.color + '20' }]}>
-                    <selectedMetric.icon size={32} color={selectedMetric.color} />
+                    {(() => {
+                      const IconComponent = selectedMetric.icon;
+                      return <IconComponent size={32} color={selectedMetric.color} />;
+                    })()}
                   </View>
                   
                   <Text style={styles.modalDescription}>
