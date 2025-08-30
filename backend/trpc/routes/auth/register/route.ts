@@ -18,6 +18,21 @@ export interface User {
     reminderTime: string;
     weeklyGoals: number;
   };
+  healthData?: {
+    dailyGoals: any[];
+    completedGoals: number;
+    streak: number;
+    lastUpdated: string;
+    weeklyReports: {
+      weekStart: string;
+      weekEnd: string;
+      totalGoalsCompleted: number;
+      averageDailyCompletion: number;
+      bestDay: string;
+      categories: { [key: string]: number };
+      insights: string[];
+    }[];
+  };
   stats: {
     totalActivities: number;
     currentStreak: number;
@@ -124,6 +139,13 @@ export const registerProcedure = publicProcedure
         darkMode: false,
         reminderTime: '09:00',
         weeklyGoals: 5
+      },
+      healthData: {
+        dailyGoals: [],
+        completedGoals: 0,
+        streak: 0,
+        lastUpdated: new Date().toISOString(),
+        weeklyReports: []
       },
       stats: {
         totalActivities: 0,

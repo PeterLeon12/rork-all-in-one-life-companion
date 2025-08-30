@@ -26,6 +26,7 @@ import {
   Sparkles
 } from 'lucide-react-native';
 import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
+import { useHealthData } from '@/contexts/HealthDataContext';
 
 const { width } = Dimensions.get('window');
 
@@ -875,6 +876,7 @@ const healthQuotes = [
 export default function HealthScreen() {
   const { addActivity } = useCategories();
   const { score: healthScore } = useCategoryData('health');
+  const { recordDailyData } = useHealthData();
   const [healthGoals, setHealthGoals] = useState<HealthGoal[]>(getInitialHealthGoals());
   const [healthMetrics, setHealthMetrics] = useState<HealthMetric[]>(getInitialHealthMetrics());
   const [dailyStreak, setDailyStreak] = useState<number>(0);
@@ -1063,6 +1065,17 @@ export default function HealthScreen() {
           const wasCompleted = goal.completed;
           const newCompleted = !wasCompleted;
           
+          // Add activity for completion immediately
+          if (newCompleted) {
+            const activityData = {
+              ...createActivityImpact.healthActivity(),
+              categoryId: 'health',
+              title: `Completed: ${goal.title}`,
+              impact: { health: goal.importance === 'high' ? 3 : goal.importance === 'medium' ? 2 : 1 }
+            };
+            addActivity(activityData);
+          }
+          
           return {
             ...goal,
             completed: newCompleted,
@@ -1073,30 +1086,28 @@ export default function HealthScreen() {
         return goal;
       });
       
+      // Update completed count immediately
+      const newCompletedCount = updatedGoals.filter(goal => goal.completed).length;
+      setCompletedGoalsToday(newCompletedCount);
+      
+      // Record daily data for weekly reporting
+      const categories: { [key: string]: number } = {};
+      updatedGoals.forEach(goal => {
+        if (goal.completed) {
+          categories[goal.category] = (categories[goal.category] || 0) + 1;
+        }
+      });
+      
+      recordDailyData({
+        goalsCompleted: newCompletedCount,
+        totalGoals: updatedGoals.length,
+        categories,
+        stepCount: healthMetrics.find(m => m.id === 'steps')?.value || 0,
+        streak: dailyStreak
+      });
+      
       return updatedGoals;
     });
-    
-    // Update counters separately to avoid state conflicts
-    setTimeout(() => {
-      setHealthGoals(currentGoals => {
-        const newCompletedCount = currentGoals.filter(goal => goal.completed).length;
-        setCompletedGoalsToday(newCompletedCount);
-        
-        // Add activity for completion
-        const toggledGoal = currentGoals.find(goal => goal.id === goalId);
-        if (toggledGoal?.completed) {
-          const activityData = {
-            ...createActivityImpact.healthActivity(),
-            categoryId: 'health',
-            title: `Completed: ${toggledGoal.title}`,
-            impact: { health: toggledGoal.importance === 'high' ? 3 : toggledGoal.importance === 'medium' ? 2 : 1 }
-          };
-          addActivity(activityData);
-        }
-        
-        return currentGoals;
-      });
-    }, 50);
   };
 
   // Initialize pedometer for real step tracking
@@ -1214,12 +1225,16 @@ export default function HealthScreen() {
     }
   }, [pastStepCount]);
   
-  // Real step tracking effect
+  // Real step tracking effect (disabled during goal interactions)
+  const [pedometerEnabled, setPedometerEnabled] = useState(true);
+  
   useEffect(() => {
     let cleanup: (() => void) | undefined;
     
     const setupPedometer = async () => {
-      cleanup = await initializePedometer();
+      if (pedometerEnabled) {
+        cleanup = await initializePedometer();
+      }
     };
     
     setupPedometer();
@@ -1229,7 +1244,17 @@ export default function HealthScreen() {
         cleanup();
       }
     };
-  }, [initializePedometer]);
+  }, [initializePedometer, pedometerEnabled]);
+  
+  // Temporarily disable pedometer during goal interactions
+  const handleGoalInteraction = (goalId: string) => {
+    setPedometerEnabled(false);
+    toggleGoalCompletion(goalId);
+    // Re-enable after a short delay
+    setTimeout(() => {
+      setPedometerEnabled(true);
+    }, 2000);
+  };
   
 
 
@@ -1509,7 +1534,7 @@ export default function HealthScreen() {
               >
                 <TouchableOpacity 
                   style={styles.goalHeader}
-                  onPress={() => toggleGoalCompletion(goal.id)}
+                  onPress={() => handleGoalInteraction(goal.id)}
                   activeOpacity={0.8}
                 >
                   <View style={[styles.goalIcon, { backgroundColor: goal.color + '20' }]}>
@@ -1557,7 +1582,7 @@ export default function HealthScreen() {
                       styles.goalCheckbox,
                       isCompleted && styles.goalCheckboxCompleted
                     ]}
-                    onPress={() => toggleGoalCompletion(goal.id)}
+                    onPress={() => handleGoalInteraction(goal.id)}
                   >
                     {isCompleted ? (
                       <CheckCircle size={28} color="#27AE60" />
@@ -1816,11 +1841,11 @@ export default function HealthScreen() {
           <View style={styles.fitnessGrid}>
             <TouchableOpacity 
               style={styles.fitnessCard}
-              onPress={() => router.push('/fitness-history')}
+              onPress={() => router.push('/weekly-health-report')}
             >
               <BarChart3 size={24} color="#FF6B6B" />
-              <Text style={styles.fitnessCardTitle}>Activity History</Text>
-              <Text style={styles.fitnessCardDescription}>Track your progress</Text>
+              <Text style={styles.fitnessCardTitle}>Weekly Report</Text>
+              <Text style={styles.fitnessCardDescription}>View your progress</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
