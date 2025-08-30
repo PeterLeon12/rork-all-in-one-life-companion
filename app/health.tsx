@@ -1055,15 +1055,17 @@ export default function HealthScreen() {
     }, 100); // Reduced debounce to 100ms for better responsiveness
     
     return () => clearTimeout(timeoutId);
-  }, [healthGoals, healthMetrics, dailyStreak, lastResetDate, completedGoalsToday, totalGoalsCompleted]);
+  }, [healthGoals, healthMetrics, dailyStreak, lastResetDate, completedGoalsToday, totalGoalsCompleted, saveHealthData]);
   
   // Toggle goal completion (optimized to prevent flickering)
   const toggleGoalCompletion = (goalId: string) => {
+    const goalToToggle = healthGoals.find(g => g.id === goalId);
+    const wasCompleted = goalToToggle?.completed || false;
+    
     setHealthGoals(prev => {
       const updatedGoals = prev.map(goal => {
         if (goal.id === goalId) {
-          const wasCompleted = goal.completed;
-          const newCompleted = !wasCompleted;
+          const newCompleted = !goal.completed;
           
           return {
             ...goal,
@@ -1099,18 +1101,18 @@ export default function HealthScreen() {
     });
     
     // Add activity after state update to avoid render-time state updates
-    setTimeout(() => {
-      const goal = healthGoals.find(g => g.id === goalId);
-      if (goal && !goal.completed) { // Only add activity when completing (not uncompleting)
+    // Only add activity when completing (not uncompleting)
+    if (goalToToggle && !wasCompleted) {
+      setTimeout(() => {
         const activityData = {
           ...createActivityImpact.healthActivity(),
           categoryId: 'health',
-          title: `Completed: ${goal.title}`,
-          impact: { health: goal.importance === 'high' ? 3 : goal.importance === 'medium' ? 2 : 1 }
+          title: `Completed: ${goalToToggle.title}`,
+          impact: { health: goalToToggle.importance === 'high' ? 3 : goalToToggle.importance === 'medium' ? 2 : 1 }
         };
         addActivity(activityData);
-      }
-    }, 0);
+      }, 100);
+    }
   };
 
   // Initialize pedometer for real step tracking
@@ -1435,7 +1437,7 @@ export default function HealthScreen() {
         </View>
       </TouchableOpacity>
     );
-  }, [width]);
+  }, [isPedometerAvailable]);
 
 
 
