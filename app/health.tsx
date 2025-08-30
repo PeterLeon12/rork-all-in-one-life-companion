@@ -1023,54 +1023,65 @@ export default function HealthScreen() {
     setPersonalizedTips(tips);
   };
 
-  // Save data whenever goals or metrics change
+  // Save data whenever goals or metrics change (debounced)
   useEffect(() => {
-    saveHealthData();
-  }, [saveHealthData]);
+    const timeoutId = setTimeout(() => {
+      saveHealthData();
+    }, 500); // Debounce saves by 500ms
+    
+    return () => clearTimeout(timeoutId);
+  }, [healthGoals, healthMetrics, dailyStreak, lastResetDate, completedGoalsToday, totalGoalsCompleted]);
   
-  // Toggle goal completion
+  // Toggle goal completion (optimized to batch state updates)
   const toggleGoalCompletion = (goalId: string) => {
-    setHealthGoals(prev => prev.map(goal => {
-      if (goal.id === goalId) {
-        const wasCompleted = goal.completed;
-        const newCompleted = !wasCompleted;
-        
-        // Update counters
-        if (newCompleted && !wasCompleted) {
-          setCompletedGoalsToday(prev => prev + 1);
-          setTotalGoalsCompleted(prev => prev + 1);
-        } else if (!newCompleted && wasCompleted) {
-          setCompletedGoalsToday(prev => Math.max(0, prev - 1));
-          setTotalGoalsCompleted(prev => Math.max(0, prev - 1));
-        }
-        
-        // Add activity for completion
-        if (newCompleted) {
-          const activityData = {
-            ...createActivityImpact.healthActivity(),
-            categoryId: 'health',
-            title: `Completed: ${goal.title}`,
-            impact: { health: goal.importance === 'high' ? 3 : goal.importance === 'medium' ? 2 : 1 }
-          };
-          addActivity(activityData);
+    setHealthGoals(prev => {
+      const updatedGoals = prev.map(goal => {
+        if (goal.id === goalId) {
+          const wasCompleted = goal.completed;
+          const newCompleted = !wasCompleted;
           
-          // Show encouraging message
-          Alert.alert(
-            '🎉 Goal Completed!',
-            `Great job completing "${goal.title}"! Every small step counts towards a healthier you.`,
-            [{ text: 'Keep Going!', style: 'default' }]
-          );
+          // Batch counter updates to avoid multiple re-renders
+          if (newCompleted && !wasCompleted) {
+            setCompletedGoalsToday(current => current + 1);
+            setTotalGoalsCompleted(current => current + 1);
+          } else if (!newCompleted && wasCompleted) {
+            setCompletedGoalsToday(current => Math.max(0, current - 1));
+            setTotalGoalsCompleted(current => Math.max(0, current - 1));
+          }
+          
+          // Add activity for completion
+          if (newCompleted) {
+            // Use setTimeout to avoid blocking the UI update
+            setTimeout(() => {
+              const activityData = {
+                ...createActivityImpact.healthActivity(),
+                categoryId: 'health',
+                title: `Completed: ${goal.title}`,
+                impact: { health: goal.importance === 'high' ? 3 : goal.importance === 'medium' ? 2 : 1 }
+              };
+              addActivity(activityData);
+              
+              // Show encouraging message
+              Alert.alert(
+                '🎉 Goal Completed!',
+                `Great job completing "${goal.title}"! Every small step counts towards a healthier you.`,
+                [{ text: 'Keep Going!', style: 'default' }]
+              );
+            }, 100);
+          }
+          
+          return {
+            ...goal,
+            completed: newCompleted,
+            completedAt: newCompleted ? new Date().toISOString() : undefined,
+            streak: newCompleted ? goal.streak + 1 : Math.max(0, goal.streak - 1)
+          };
         }
-        
-        return {
-          ...goal,
-          completed: newCompleted,
-          completedAt: newCompleted ? new Date().toISOString() : undefined,
-          streak: newCompleted ? goal.streak + 1 : Math.max(0, goal.streak - 1)
-        };
-      }
-      return goal;
-    }));
+        return goal;
+      });
+      
+      return updatedGoals;
+    });
   };
 
   // Initialize pedometer for real step tracking
@@ -1079,7 +1090,7 @@ export default function HealthScreen() {
     
     if (Platform.OS === 'web') {
       console.log('Pedometer not available on web, using simulated steps');
-      // Fallback to simulated steps for web
+      // Fallback to simulated steps for web (less frequent updates to reduce flickering)
       const updateSteps = () => {
         setHealthMetrics(prev => prev.map(metric => {
           if (metric.id === 'steps') {
@@ -1089,7 +1100,7 @@ export default function HealthScreen() {
           return metric;
         }));
       };
-      const interval = setInterval(updateSteps, 30000);
+      const interval = setInterval(updateSteps, 60000); // Reduced frequency from 30s to 60s
       return () => clearInterval(interval);
     }
     
@@ -1122,8 +1133,14 @@ export default function HealthScreen() {
           console.error('Error getting past step count:', error);
         }
         
-        // Subscribe to real-time step updates
+        // Subscribe to real-time step updates (throttled to reduce flickering)
+        let lastUpdateTime = 0;
         const subscription = Pedometer.watchStepCount(result => {
+          const now = Date.now();
+          // Throttle updates to once every 5 seconds to reduce flickering
+          if (now - lastUpdateTime < 5000) return;
+          lastUpdateTime = now;
+          
           console.log('Step count update:', result.steps);
           const totalSteps = pastStepCount + result.steps;
           
@@ -1141,7 +1158,7 @@ export default function HealthScreen() {
         };
       } else {
         console.log('Pedometer not available, using simulated steps');
-        // Fallback to simulated steps
+        // Fallback to simulated steps (reduced frequency)
         const updateSteps = () => {
           setHealthMetrics(prev => prev.map(metric => {
             if (metric.id === 'steps') {
@@ -1151,14 +1168,14 @@ export default function HealthScreen() {
             return metric;
           }));
         };
-        const interval = setInterval(updateSteps, 30000);
+        const interval = setInterval(updateSteps, 60000); // Reduced frequency
         return () => clearInterval(interval);
       }
     } catch (error) {
       console.error('Error initializing pedometer:', error);
       setIsPedometerAvailable(false);
       
-      // Fallback to simulated steps
+      // Fallback to simulated steps (reduced frequency)
       const updateSteps = () => {
         setHealthMetrics(prev => prev.map(metric => {
           if (metric.id === 'steps') {
@@ -1168,7 +1185,7 @@ export default function HealthScreen() {
           return metric;
         }));
       };
-      const interval = setInterval(updateSteps, 30000);
+      const interval = setInterval(updateSteps, 60000); // Reduced frequency
       return () => clearInterval(interval);
     }
   }, [pastStepCount]);
@@ -1287,7 +1304,7 @@ export default function HealthScreen() {
     return colors[category] || '#95A5A6';
   };
   
-  const renderMetricCard = (metric: HealthMetric, index: number) => {
+  const renderMetricCard = React.useCallback((metric: HealthMetric, index: number) => {
     const IconComponent = metric.icon;
     const progress = Math.round((metric.value / metric.target) * 100);
     const progressWidth = (width - 72) * (progress / 100);
@@ -1295,7 +1312,7 @@ export default function HealthScreen() {
     
     return (
       <TouchableOpacity 
-        key={index} 
+        key={`${metric.id}-${index}`} 
         style={[
           styles.metricCard,
           isCompleted && styles.metricCardCompleted
@@ -1349,7 +1366,7 @@ export default function HealthScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [width]);
 
 
 
