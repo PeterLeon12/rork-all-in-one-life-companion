@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Modal, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   Heart, 
   Activity, 
@@ -11,7 +12,13 @@ import {
   Plus,
   MessageCircle,
   CheckCircle,
-  Utensils
+  Utensils,
+  X,
+  Clock,
+  Minus,
+  RotateCcw,
+  TrendingUp,
+  Calendar
 } from 'lucide-react-native';
 import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
 
@@ -37,11 +44,11 @@ interface QuickAction {
   increment?: number;
 }
 
-const initialHealthMetrics: HealthMetric[] = [
-  { id: 'steps', label: 'Steps Today', value: 8432, target: 10000, unit: 'steps', icon: Activity, color: '#FF6B6B', actionable: false },
-  { id: 'water', label: 'Water Intake', value: 6, target: 8, unit: 'glasses', icon: Droplets, color: '#4ECDC4', actionable: true },
-  { id: 'sleep', label: 'Sleep Hours', value: 7.5, target: 8, unit: 'hours', icon: Moon, color: '#6C5CE7', actionable: true },
-  { id: 'meditation', label: 'Meditation', value: 15, target: 20, unit: 'minutes', icon: Brain, color: '#FFD93D', actionable: true }
+const getInitialHealthMetrics = (): HealthMetric[] => [
+  { id: 'steps', label: 'Steps Today', value: 0, target: 10000, unit: 'steps', icon: Activity, color: '#FF6B6B', actionable: false },
+  { id: 'water', label: 'Water Intake', value: 0, target: 8, unit: 'glasses', icon: Droplets, color: '#4ECDC4', actionable: true },
+  { id: 'sleep', label: 'Sleep Hours', value: 0, target: 8, unit: 'hours', icon: Moon, color: '#6C5CE7', actionable: true },
+  { id: 'meditation', label: 'Meditation', value: 0, target: 20, unit: 'minutes', icon: Brain, color: '#FFD93D', actionable: true }
 ];
 
 const quickActions: QuickAction[] = [
@@ -60,10 +67,11 @@ const healthPrograms = [
     route: '/fitness'
   },
   {
-    title: 'Mindfulness',
+    title: 'Mindfulness Journey',
     description: 'Daily meditation practice',
     progress: 29,
-    color: '#6C5CE7'
+    color: '#6C5CE7',
+    route: '/mindfulness'
   },
   {
     title: 'Break Free',
@@ -71,41 +79,215 @@ const healthPrograms = [
     progress: 0,
     color: '#E74C3C',
     route: '/break-free'
+  },
+  {
+    title: 'Nutrition Guide',
+    description: 'Healthy eating habits',
+    progress: 45,
+    color: '#27AE60'
+  }
+];
+
+const healthTips = [
+  {
+    title: 'Stay Hydrated',
+    description: 'Drink water first thing in the morning to kickstart your metabolism.',
+    icon: Droplets,
+    color: '#4ECDC4'
+  },
+  {
+    title: 'Move Every Hour',
+    description: 'Take a 2-minute walk every hour to improve circulation and energy.',
+    icon: Activity,
+    color: '#FF6B6B'
+  },
+  {
+    title: 'Deep Breathing',
+    description: 'Practice 4-7-8 breathing: inhale 4, hold 7, exhale 8 seconds.',
+    icon: Brain,
+    color: '#FFD93D'
+  },
+  {
+    title: 'Sleep Hygiene',
+    description: 'Keep your bedroom cool (65-68°F) for optimal sleep quality.',
+    icon: Moon,
+    color: '#6C5CE7'
+  }
+];
+
+const weeklyGoals = [
+  {
+    title: 'Exercise 4x this week',
+    current: 2,
+    target: 4,
+    color: '#FF6B6B'
+  },
+  {
+    title: 'Meditate daily',
+    current: 5,
+    target: 7,
+    color: '#FFD93D'
+  },
+  {
+    title: 'Drink 8 glasses daily',
+    current: 6,
+    target: 7,
+    color: '#4ECDC4'
   }
 ];
 
 export default function HealthScreen() {
   const { addActivity } = useCategories();
   const { score: healthScore, weeklyImprovement } = useCategoryData('health');
-  const [healthMetrics, setHealthMetrics] = useState<HealthMetric[]>(initialHealthMetrics);
-  const [dailyStreak] = useState<number>(5);
+  const [healthMetrics, setHealthMetrics] = useState<HealthMetric[]>(getInitialHealthMetrics());
+  const [dailyStreak, setDailyStreak] = useState<number>(0);
+  const [selectedMetric, setSelectedMetric] = useState<HealthMetric | null>(null);
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [lastResetDate, setLastResetDate] = useState<string>('');
 
   // Load saved metrics from storage
   useEffect(() => {
-    // In a real app, you'd load this from AsyncStorage
-    // For now, we'll simulate some dynamic data
-    const updateMetrics = () => {
+    loadHealthData();
+    checkDailyReset();
+  }, []);
+
+  // Save data whenever metrics change
+  useEffect(() => {
+    saveHealthData();
+  }, [healthMetrics, dailyStreak]);
+
+  const loadHealthData = async () => {
+    try {
+      const savedMetrics = await AsyncStorage.getItem('healthMetrics');
+      const savedStreak = await AsyncStorage.getItem('healthStreak');
+      const savedResetDate = await AsyncStorage.getItem('healthResetDate');
+      
+      if (savedMetrics) {
+        setHealthMetrics(JSON.parse(savedMetrics));
+      }
+      
+      if (savedStreak) {
+        setDailyStreak(parseInt(savedStreak));
+      }
+      
+      if (savedResetDate) {
+        setLastResetDate(savedResetDate);
+      }
+    } catch (error) {
+      console.error('Error loading health data:', error);
+    }
+  };
+
+  const saveHealthData = async () => {
+    try {
+      await AsyncStorage.setItem('healthMetrics', JSON.stringify(healthMetrics));
+      await AsyncStorage.setItem('healthStreak', dailyStreak.toString());
+      await AsyncStorage.setItem('healthResetDate', lastResetDate);
+    } catch (error) {
+      console.error('Error saving health data:', error);
+    }
+  };
+
+  const checkDailyReset = () => {
+    const today = new Date().toDateString();
+    const lastReset = lastResetDate;
+    
+    if (lastReset !== today) {
+      // Reset daily metrics but keep streak if goals were met yesterday
+      const yesterdayGoalsMet = healthMetrics.every(metric => 
+        !metric.actionable || metric.value >= metric.target
+      );
+      
+      if (lastReset && yesterdayGoalsMet) {
+        setDailyStreak(prev => prev + 1);
+      } else if (lastReset) {
+        setDailyStreak(0);
+      }
+      
+      // Reset daily values
+      setHealthMetrics(prev => prev.map(metric => ({
+        ...metric,
+        value: metric.id === 'steps' ? Math.floor(Math.random() * 3000) : 0 // Simulate some steps
+      })));
+      
+      setLastResetDate(today);
+    }
+  };
+
+  // Simulate step counter updates
+  useEffect(() => {
+    const updateSteps = () => {
       setHealthMetrics(prev => prev.map(metric => {
         if (metric.id === 'steps') {
-          // Simulate step counter updates
-          return { ...metric, value: Math.min(metric.target, metric.value + Math.floor(Math.random() * 100)) };
+          const increment = Math.floor(Math.random() * 50) + 10;
+          return { ...metric, value: Math.min(metric.target, metric.value + increment) };
         }
         return metric;
       }));
     };
 
-    const interval = setInterval(updateMetrics, 30000); // Update every 30 seconds
+    const interval = setInterval(updateSteps, 30000); // Update every 30 seconds
     return () => clearInterval(interval);
   }, []);
   
   const updateMetric = (metricId: string, increment: number) => {
     setHealthMetrics(prev => prev.map(metric => {
       if (metric.id === metricId) {
-        const newValue = Math.min(metric.target, metric.value + increment);
+        const newValue = Math.max(0, Math.min(metric.target * 1.5, metric.value + increment));
         return { ...metric, value: newValue };
       }
       return metric;
     }));
+  };
+
+  const openMetricModal = (metric: HealthMetric) => {
+    if (metric.actionable) {
+      setSelectedMetric(metric);
+      setModalVisible(true);
+    }
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedMetric(null);
+  };
+
+  const handleMetricUpdate = (increment: number) => {
+    if (selectedMetric) {
+      updateMetric(selectedMetric.id, increment);
+      
+      // Add activity for significant updates
+      if (increment > 0) {
+        const action: QuickAction = {
+          id: selectedMetric.id,
+          title: selectedMetric.label,
+          icon: selectedMetric.icon,
+          color: selectedMetric.color,
+          action: selectedMetric.id,
+          increment: increment
+        };
+        handleQuickAction(action);
+      }
+    }
+  };
+
+  const resetDailyMetrics = () => {
+    Alert.alert(
+      'Reset Daily Metrics',
+      'Are you sure you want to reset all daily metrics? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            setHealthMetrics(getInitialHealthMetrics());
+            setDailyStreak(0);
+            setLastResetDate(new Date().toDateString());
+          }
+        }
+      ]
+    );
   };
 
   const handleQuickAction = (action: QuickAction) => {
@@ -179,19 +361,7 @@ export default function HealthScreen() {
           styles.metricCard,
           isCompleted && styles.metricCardCompleted
         ]}
-        onPress={() => {
-          if (metric.actionable) {
-            const action: QuickAction = {
-              id: metric.id,
-              title: metric.label,
-              icon: metric.icon,
-              color: metric.color,
-              action: metric.id,
-              increment: metric.id === 'water' ? 1 : metric.id === 'meditation' ? 10 : undefined
-            };
-            handleQuickAction(action);
-          }
-        }}
+        onPress={() => openMetricModal(metric)}
         activeOpacity={metric.actionable ? 0.8 : 1}
       >
         <View style={styles.metricHeader}>
@@ -340,11 +510,24 @@ export default function HealthScreen() {
           </LinearGradient>
         </View>
 
-        {/* Daily Streak */}
+        {/* Daily Streak & Stats */}
         <View style={styles.section}>
-          <View style={styles.streakCard}>
-            <Text style={styles.streakDays}>{dailyStreak}</Text>
-            <Text style={styles.streakTitle}>Day Streak</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.streakCard}>
+              <Text style={styles.streakDays}>{dailyStreak}</Text>
+              <Text style={styles.streakTitle}>Day Streak</Text>
+            </View>
+            
+            <View style={styles.statCard}>
+              <TrendingUp size={20} color="#27AE60" />
+              <Text style={styles.statValue}>{Math.round((healthMetrics.filter(m => m.actionable && m.value >= m.target).length / healthMetrics.filter(m => m.actionable).length) * 100) || 0}%</Text>
+              <Text style={styles.statLabel}>Goals Met</Text>
+            </View>
+            
+            <TouchableOpacity style={styles.resetButton} onPress={resetDailyMetrics}>
+              <RotateCcw size={16} color="#E74C3C" />
+              <Text style={styles.resetButtonText}>Reset</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -362,21 +545,176 @@ export default function HealthScreen() {
           </View>
         </View>
 
-        {/* Programs */}
+        {/* Weekly Goals */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Programs</Text>
-          {healthPrograms.map(renderProgram)}
+          <Text style={styles.sectionTitle}>Weekly Goals</Text>
+          <View style={styles.weeklyGoalsContainer}>
+            {weeklyGoals.map((goal, index) => {
+              const progress = (goal.current / goal.target) * 100;
+              return (
+                <View key={index} style={styles.weeklyGoalCard}>
+                  <View style={styles.weeklyGoalHeader}>
+                    <Text style={styles.weeklyGoalTitle}>{goal.title}</Text>
+                    <Text style={[styles.weeklyGoalProgress, { color: goal.color }]}>
+                      {goal.current}/{goal.target}
+                    </Text>
+                  </View>
+                  <View style={styles.weeklyProgressBar}>
+                    <View 
+                      style={[
+                        styles.weeklyProgressFill, 
+                        { width: `${Math.min(progress, 100)}%`, backgroundColor: goal.color }
+                      ]} 
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
         </View>
 
+        {/* Health Tips */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Daily Health Tips</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tipsScrollView}>
+            {healthTips.map((tip, index) => {
+              const IconComponent = tip.icon;
+              return (
+                <View key={index} style={styles.tipCard}>
+                  <View style={[styles.tipIcon, { backgroundColor: tip.color + '20' }]}>
+                    <IconComponent size={24} color={tip.color} />
+                  </View>
+                  <Text style={styles.tipTitle}>{tip.title}</Text>
+                  <Text style={styles.tipDescription}>{tip.description}</Text>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-
-
+        {/* Programs */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Health Programs</Text>
+          {healthPrograms.map(renderProgram)}
+        </View>
             </ScrollView>
           </View>
         </LinearGradient>
       </View>
 
-
+      {/* Metric Update Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {selectedMetric && (
+              <>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>{selectedMetric.label}</Text>
+                  <TouchableOpacity onPress={closeModal} style={styles.modalCloseButton}>
+                    <X size={24} color="#7F8C8D" />
+                  </TouchableOpacity>
+                </View>
+                
+                <View style={styles.modalBody}>
+                  <View style={[styles.modalIcon, { backgroundColor: selectedMetric.color + '20' }]}>
+                    <selectedMetric.icon size={32} color={selectedMetric.color} />
+                  </View>
+                  
+                  <Text style={styles.modalDescription}>
+                    Current: {selectedMetric.value} {selectedMetric.unit}
+                  </Text>
+                  <Text style={styles.modalDescription}>
+                    Goal: {selectedMetric.target} {selectedMetric.unit}
+                  </Text>
+                  
+                  <View style={styles.modalActions}>
+                    {selectedMetric.id === 'water' && (
+                      <>
+                        <TouchableOpacity 
+                          style={[styles.modalActionButton, { backgroundColor: '#E74C3C' }]}
+                          onPress={() => handleMetricUpdate(-1)}
+                        >
+                          <Minus size={20} color="white" />
+                          <Text style={styles.modalActionText}>-1 Glass</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                          style={[styles.modalActionButton, { backgroundColor: selectedMetric.color }]}
+                          onPress={() => handleMetricUpdate(1)}
+                        >
+                          <Plus size={20} color="white" />
+                          <Text style={styles.modalActionText}>+1 Glass</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                    
+                    {selectedMetric.id === 'meditation' && (
+                      <>
+                        <TouchableOpacity 
+                          style={[styles.modalActionButton, { backgroundColor: selectedMetric.color }]}
+                          onPress={() => handleMetricUpdate(5)}
+                        >
+                          <Plus size={20} color="white" />
+                          <Text style={styles.modalActionText}>+5 min</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                          style={[styles.modalActionButton, { backgroundColor: selectedMetric.color }]}
+                          onPress={() => handleMetricUpdate(10)}
+                        >
+                          <Plus size={20} color="white" />
+                          <Text style={styles.modalActionText}>+10 min</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                          style={[styles.modalActionButton, { backgroundColor: selectedMetric.color }]}
+                          onPress={() => handleMetricUpdate(20)}
+                        >
+                          <Plus size={20} color="white" />
+                          <Text style={styles.modalActionText}>+20 min</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                    
+                    {selectedMetric.id === 'sleep' && (
+                      <>
+                        <TouchableOpacity 
+                          style={[styles.modalActionButton, { backgroundColor: '#E74C3C' }]}
+                          onPress={() => handleMetricUpdate(-0.5)}
+                        >
+                          <Minus size={20} color="white" />
+                          <Text style={styles.modalActionText}>-30 min</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                          style={[styles.modalActionButton, { backgroundColor: selectedMetric.color }]}
+                          onPress={() => handleMetricUpdate(0.5)}
+                        >
+                          <Plus size={20} color="white" />
+                          <Text style={styles.modalActionText}>+30 min</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                          style={[styles.modalActionButton, { backgroundColor: selectedMetric.color }]}
+                          onPress={() => handleMetricUpdate(1)}
+                        >
+                          <Plus size={20} color="white" />
+                          <Text style={styles.modalActionText}>+1 hour</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -754,6 +1092,53 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     marginTop: 4,
   },
+  statsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    minWidth: 80,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginTop: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#7F8C8D',
+    marginTop: 2,
+  },
+  resetButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    padding: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  resetButtonText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#E74C3C',
+    marginTop: 2,
+  },
   weeklyGoalsContainer: {
     paddingHorizontal: 24,
   },
@@ -864,8 +1249,10 @@ const styles = StyleSheet.create({
   },
   modalActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 12,
+    marginTop: 20,
   },
   modalCancelButton: {
     flex: 1,
@@ -891,5 +1278,54 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: 'white',
+  },
+  modalActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 25,
+    minWidth: 100,
+    justifyContent: 'center',
+  },
+  modalActionText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  tipsScrollView: {
+    paddingLeft: 24,
+  },
+  tipCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    padding: 20,
+    marginRight: 16,
+    width: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  tipIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  tipTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 8,
+  },
+  tipDescription: {
+    fontSize: 14,
+    color: '#7F8C8D',
+    lineHeight: 20,
   },
 });
