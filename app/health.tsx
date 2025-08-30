@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Modal, Alert } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Modal, Alert, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Pedometer } from 'expo-sensors';
 import { 
   Heart, 
   Activity, 
@@ -14,11 +15,9 @@ import {
   CheckCircle,
   Utensils,
   X,
-  Clock,
   Minus,
   RotateCcw,
-  TrendingUp,
-  Calendar
+  TrendingUp
 } from 'lucide-react-native';
 import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
 
@@ -144,19 +143,11 @@ export default function HealthScreen() {
   const [selectedMetric, setSelectedMetric] = useState<HealthMetric | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [lastResetDate, setLastResetDate] = useState<string>('');
+  const [isPedometerAvailable, setIsPedometerAvailable] = useState<boolean>(false);
+  const [pastStepCount, setPastStepCount] = useState<number>(0);
+  const [currentStepCount, setCurrentStepCount] = useState<number>(0);
 
-  // Load saved metrics from storage
-  useEffect(() => {
-    loadHealthData();
-    checkDailyReset();
-  }, []);
-
-  // Save data whenever metrics change
-  useEffect(() => {
-    saveHealthData();
-  }, [healthMetrics, dailyStreak]);
-
-  const loadHealthData = async () => {
+  const loadHealthData = React.useCallback(async () => {
     try {
       const savedMetrics = await AsyncStorage.getItem('healthMetrics');
       const savedStreak = await AsyncStorage.getItem('healthStreak');
@@ -186,9 +177,9 @@ export default function HealthScreen() {
     } catch (error) {
       console.error('Error loading health data:', error);
     }
-  };
+  }, []);
 
-  const saveHealthData = async () => {
+  const saveHealthData = React.useCallback(async () => {
     try {
       // Remove icon components before saving to avoid serialization issues
       const metricsToSave = healthMetrics.map(metric => ({
@@ -201,9 +192,9 @@ export default function HealthScreen() {
     } catch (error) {
       console.error('Error saving health data:', error);
     }
-  };
+  }, [healthMetrics, dailyStreak, lastResetDate]);
 
-  const checkDailyReset = () => {
+  const checkDailyReset = React.useCallback(() => {
     const today = new Date().toDateString();
     const lastReset = lastResetDate;
     
@@ -222,28 +213,147 @@ export default function HealthScreen() {
       // Reset daily values
       setHealthMetrics(prev => prev.map(metric => ({
         ...metric,
-        value: metric.id === 'steps' ? Math.floor(Math.random() * 3000) : 0 // Simulate some steps
+        value: metric.id === 'steps' ? 0 : 0 // Reset steps to 0 for new day
       })));
+      
+      // Reset step counters for new day
+      setPastStepCount(0);
+      setCurrentStepCount(0);
       
       setLastResetDate(today);
     }
-  };
+  }, [lastResetDate, healthMetrics]);
 
-  // Simulate step counter updates
+  // Load saved metrics from storage and initialize pedometer
   useEffect(() => {
-    const updateSteps = () => {
-      setHealthMetrics(prev => prev.map(metric => {
-        if (metric.id === 'steps') {
-          const increment = Math.floor(Math.random() * 50) + 10;
-          return { ...metric, value: Math.min(metric.target, metric.value + increment) };
-        }
-        return metric;
-      }));
-    };
+    loadHealthData();
+    checkDailyReset();
+    initializePedometer();
+  }, [loadHealthData, checkDailyReset]);
 
-    const interval = setInterval(updateSteps, 30000); // Update every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
+  // Save data whenever metrics change
+  useEffect(() => {
+    saveHealthData();
+  }, [saveHealthData]);
+
+  // Initialize pedometer for real step tracking
+  const initializePedometer = React.useCallback(async () => {
+    console.log('Initializing pedometer...');
+    
+    if (Platform.OS === 'web') {
+      console.log('Pedometer not available on web, using simulated steps');
+      // Fallback to simulated steps for web
+      const updateSteps = () => {
+        setHealthMetrics(prev => prev.map(metric => {
+          if (metric.id === 'steps') {
+            const increment = Math.floor(Math.random() * 50) + 10;
+            return { ...metric, value: Math.min(metric.target, metric.value + increment) };
+          }
+          return metric;
+        }));
+      };
+      const interval = setInterval(updateSteps, 30000);
+      return () => clearInterval(interval);
+    }
+    
+    try {
+      const isAvailable = await Pedometer.isAvailableAsync();
+      console.log('Pedometer available:', isAvailable);
+      setIsPedometerAvailable(isAvailable);
+      
+      if (isAvailable) {
+        // Get today's steps from midnight
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const end = new Date();
+        
+        console.log('Getting step count from', start, 'to', end);
+        
+        try {
+          const pastStepCountResult = await Pedometer.getStepCountAsync(start, end);
+          console.log('Past step count:', pastStepCountResult.steps);
+          setPastStepCount(pastStepCountResult.steps);
+          setCurrentStepCount(pastStepCountResult.steps);
+          
+          // Update the steps metric with real data
+          setHealthMetrics(prev => prev.map(metric => {
+            if (metric.id === 'steps') {
+              return { ...metric, value: pastStepCountResult.steps };
+            }
+            return metric;
+          }));
+        } catch (error) {
+          console.error('Error getting past step count:', error);
+        }
+        
+        // Subscribe to real-time step updates
+        const subscription = Pedometer.watchStepCount(result => {
+          console.log('Step count update:', result.steps);
+          const totalSteps = pastStepCount + result.steps;
+          setCurrentStepCount(totalSteps);
+          
+          setHealthMetrics(prev => prev.map(metric => {
+            if (metric.id === 'steps') {
+              return { ...metric, value: totalSteps };
+            }
+            return metric;
+          }));
+        });
+        
+        return () => {
+          console.log('Unsubscribing from pedometer');
+          subscription && subscription.remove();
+        };
+      } else {
+        console.log('Pedometer not available, using simulated steps');
+        // Fallback to simulated steps
+        const updateSteps = () => {
+          setHealthMetrics(prev => prev.map(metric => {
+            if (metric.id === 'steps') {
+              const increment = Math.floor(Math.random() * 50) + 10;
+              return { ...metric, value: Math.min(metric.target, metric.value + increment) };
+            }
+            return metric;
+          }));
+        };
+        const interval = setInterval(updateSteps, 30000);
+        return () => clearInterval(interval);
+      }
+    } catch (error) {
+      console.error('Error initializing pedometer:', error);
+      setIsPedometerAvailable(false);
+      
+      // Fallback to simulated steps
+      const updateSteps = () => {
+        setHealthMetrics(prev => prev.map(metric => {
+          if (metric.id === 'steps') {
+            const increment = Math.floor(Math.random() * 50) + 10;
+            return { ...metric, value: Math.min(metric.target, metric.value + increment) };
+          }
+          return metric;
+        }));
+      };
+      const interval = setInterval(updateSteps, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [pastStepCount]);
+  
+  // Real step tracking effect
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    
+    const setupPedometer = async () => {
+      cleanup = await initializePedometer();
+    };
+    
+    setupPedometer();
+    
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, [initializePedometer]);
   
   const updateMetric = (metricId: string, increment: number) => {
     setHealthMetrics(prev => prev.map(metric => {
@@ -392,6 +502,11 @@ export default function HealthScreen() {
             <Text style={styles.metricLabel}>{metric.label}</Text>
             <Text style={styles.metricValue}>
               {metric.value.toLocaleString()} {metric.unit}
+              {metric.id === 'steps' && Platform.OS !== 'web' && (
+                <Text style={styles.stepTrackingIndicator}>
+                  {isPedometerAvailable ? ' 📱' : ' 🔄'}
+                </Text>
+              )}
             </Text>
             <Text style={styles.metricTarget}>Goal: {metric.target.toLocaleString()} {metric.unit}</Text>
           </View>
@@ -1345,5 +1460,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#7F8C8D',
     lineHeight: 20,
+  },
+  stepTrackingIndicator: {
+    fontSize: 12,
+    opacity: 0.7,
   },
 });
