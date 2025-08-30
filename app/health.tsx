@@ -1009,7 +1009,10 @@ export default function HealthScreen() {
     loadHealthData();
     checkDailyReset();
     loadPersonalizedTips();
-    
+  }, [loadHealthData, checkDailyReset]);
+  
+  // Separate effect for quote rotation to avoid multiple intervals
+  useEffect(() => {
     // Show random quotes every 10 seconds for optimal reading time
     const getRandomQuote = () => {
       const randomIndex = Math.floor(Math.random() * healthQuotes.length);
@@ -1021,10 +1024,10 @@ export default function HealthScreen() {
     
     const quoteInterval = setInterval(() => {
       setCurrentQuote(getRandomQuote());
-    }, 10000);
+    }, 10000); // 10 seconds per quote
     
     return () => clearInterval(quoteInterval);
-  }, [loadHealthData, checkDailyReset]);
+  }, []); // Empty dependency array to run only once
   
   const loadPersonalizedTips = async () => {
     const tips = await generatePersonalizedHealthTips();
