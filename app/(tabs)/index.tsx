@@ -174,10 +174,10 @@ const quickActions = [
     action: () => router.push('/lifestyle')
   },
   { 
-    title: 'Break Habit', 
-    icon: ShieldCheck, 
-    color: '#FFD93D',
-    action: () => router.push('/confidence')
+    title: 'Plan Adventure', 
+    icon: MapPin, 
+    color: '#FF9500',
+    action: () => router.push('/travel')
   }
 ];
 

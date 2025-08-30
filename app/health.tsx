@@ -76,17 +76,16 @@ const healthPrograms = [
     route: '/mindfulness'
   },
   {
-    title: 'Break Free',
-    description: 'Overcome harmful habits',
-    progress: 0,
-    color: '#E74C3C',
-    route: '/break-free'
-  },
-  {
     title: 'Nutrition Guide',
     description: 'Healthy eating habits',
     progress: 45,
     color: '#27AE60'
+  },
+  {
+    title: 'Energy Optimization',
+    description: 'Boost your daily energy levels',
+    progress: 32,
+    color: '#FF6B6B'
   }
 ];
 
