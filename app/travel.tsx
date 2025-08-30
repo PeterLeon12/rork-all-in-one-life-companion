@@ -21,8 +21,8 @@ const { width } = Dimensions.get('window');
 const travelMetrics = [
   { label: 'Adventure Score', value: '92%', icon: Compass, color: '#FF6B35', trend: '+15%' },
   { label: 'Countries Visited', value: '12', icon: Globe, color: '#4ECDC4', trend: '+2' },
-  { label: 'Cultural Immersion', value: '88%', icon: Heart, color: '#45B7D1', trend: '+8%' },
-  { label: 'Memories Created', value: '247', icon: Camera, color: '#96CEB4', trend: '+23' }
+  { label: 'Community Impact', value: '88%', icon: Heart, color: '#45B7D1', trend: '+8%' },
+  { label: 'Volunteer Hours', value: '47', icon: Users, color: '#96CEB4', trend: '+12' }
 ];
 
 const upcomingTrips = [
@@ -54,9 +54,9 @@ const upcomingTrips = [
 
 const travelGoals = [
   { goal: 'Visit 3 new countries', progress: 67, target: '3 countries', current: '2 countries' },
-  { goal: 'Learn basic phrases', progress: 80, target: '5 languages', current: '4 languages' },
+  { goal: 'Volunteer projects', progress: 80, target: '5 projects', current: '4 projects' },
   { goal: 'Cultural experiences', progress: 90, target: '20 activities', current: '18 activities' },
-  { goal: 'Photo documentation', progress: 75, target: '500 photos', current: '375 photos' }
+  { goal: 'Community connections', progress: 75, target: '50 people', current: '37 people' }
 ];
 
 const travelActivities = [
@@ -69,27 +69,27 @@ const travelActivities = [
     color: '#FF6B35'
   },
   {
-    activity: 'Trip research',
+    activity: 'Volunteer research',
     time: '2:00 PM',
-    description: 'Tokyo neighborhoods guide',
+    description: 'Find local community projects',
     completed: false,
-    icon: MapPin,
+    icon: Users,
     color: '#4ECDC4'
   },
   {
-    activity: 'Photo editing',
+    activity: 'Cultural exchange',
     time: '7:00 PM',
-    description: 'Last trip memories',
+    description: 'Connect with local community',
     completed: false,
-    icon: Camera,
+    icon: Heart,
     color: '#45B7D1'
   },
   {
-    activity: 'Travel planning',
+    activity: 'Impact planning',
     time: '8:30 PM',
-    description: 'Book accommodations',
+    description: 'Plan meaningful contributions',
     completed: false,
-    icon: Calendar,
+    icon: Globe,
     color: '#96CEB4'
   }
 ];
@@ -276,7 +276,7 @@ export default function TravelScreen() {
     <>
       <Stack.Screen 
         options={{ 
-          title: "Travel & Adventure",
+          title: "Travel & Community",
           headerStyle: { backgroundColor: '#FF6B35' },
           headerTintColor: 'white',
           headerTitleStyle: { fontWeight: 'bold' }
@@ -294,7 +294,7 @@ export default function TravelScreen() {
           >
             <View style={styles.headerContent}>
               <MapPin size={32} color="white" />
-              <Text style={styles.headerTitle}>Adventure Score</Text>
+              <Text style={styles.headerTitle}>Travel & Community</Text>
               <Text style={styles.headerScore}>92%</Text>
               <Text style={styles.headerSubtitle}>Ready for your next journey</Text>
             </View>
@@ -336,6 +336,48 @@ export default function TravelScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Today&apos;s Travel Tasks</Text>
           {travelActivities.map(renderTravelActivity)}
+        </View>
+
+        {/* Community Projects */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Local Community Projects</Text>
+          {[
+            {
+              title: 'Beach Cleanup',
+              location: 'Local Beach',
+              date: 'This Saturday',
+              participants: 23,
+              impact: 'Environmental',
+              color: '#4ECDC4'
+            },
+            {
+              title: 'Food Bank Volunteer',
+              location: 'Community Center',
+              date: 'Next Tuesday',
+              participants: 15,
+              impact: 'Social',
+              color: '#96CEB4'
+            },
+            {
+              title: 'Language Exchange',
+              location: 'Library',
+              date: 'Every Thursday',
+              participants: 8,
+              impact: 'Cultural',
+              color: '#FF6B35'
+            }
+          ].map((project, index) => (
+            <TouchableOpacity key={index} style={styles.tripCard} activeOpacity={0.8}>
+              <View style={[styles.tripIcon, { backgroundColor: project.color + '20' }]}>
+                <Users size={20} color={project.color} />
+              </View>
+              <View style={styles.tripContent}>
+                <Text style={styles.tripDestination}>{project.title}</Text>
+                <Text style={styles.tripDate}>{project.location} • {project.date}</Text>
+                <Text style={styles.tripType}>{project.participants} participants • {project.impact}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Travel Goals */}

@@ -19,7 +19,9 @@ import {
   RotateCcw,
   TrendingUp,
   BarChart3,
-  User
+  User,
+  Target,
+  Zap
 } from 'lucide-react-native';
 import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
 
@@ -64,8 +66,7 @@ const healthPrograms = [
     title: 'Fitness Challenge',
     description: '30-day transformation',
     progress: 67,
-    color: '#4ECDC4',
-    route: '/fitness'
+    color: '#4ECDC4'
   },
   {
     title: 'Mindfulness Journey',
@@ -598,7 +599,7 @@ export default function HealthScreen() {
     <>
       <Stack.Screen 
         options={{ 
-          title: "Health",
+          title: "Health & Fitness",
           headerStyle: { backgroundColor: '#FF6B6B' },
           headerTintColor: 'white',
           headerTitleStyle: { fontWeight: 'bold' }
@@ -730,24 +731,52 @@ export default function HealthScreen() {
           {healthPrograms.map(renderProgram)}
         </View>
 
-        {/* Fitness Tracking */}
+        {/* Fitness & Energy Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Fitness Tracking</Text>
-          <View style={styles.fitnessActions}>
+          <Text style={styles.sectionTitle}>Fitness & Energy</Text>
+          <View style={styles.fitnessGrid}>
             <TouchableOpacity 
-              style={styles.fitnessActionButton}
+              style={styles.fitnessCard}
               onPress={() => router.push('/fitness-history')}
             >
-              <BarChart3 size={24} color="white" />
-              <Text style={styles.fitnessActionButtonText}>View History</Text>
+              <BarChart3 size={24} color="#FF6B6B" />
+              <Text style={styles.fitnessCardTitle}>Workout History</Text>
+              <Text style={styles.fitnessCardDescription}>Track your progress</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={[styles.fitnessActionButton, { backgroundColor: '#4ECDC4' }]}
+              style={styles.fitnessCard}
               onPress={() => router.push('/profile-setup')}
             >
-              <User size={24} color="white" />
-              <Text style={styles.fitnessActionButtonText}>Setup Profile</Text>
+              <User size={24} color="#4ECDC4" />
+              <Text style={styles.fitnessCardTitle}>Fitness Profile</Text>
+              <Text style={styles.fitnessCardDescription}>Setup your goals</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.fitnessCard}
+              onPress={() => router.push('/ai-fitness-plan')}
+            >
+              <Target size={24} color="#FFD93D" />
+              <Text style={styles.fitnessCardTitle}>AI Workout Plan</Text>
+              <Text style={styles.fitnessCardDescription}>Personalized training</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.fitnessCard}
+              onPress={() => {
+                const energyActivity = {
+                  ...createActivityImpact.energyBoost(),
+                  categoryId: 'health',
+                  title: 'Energy boost activity'
+                };
+                addActivity(energyActivity);
+                Alert.alert('Energy Boost!', 'Great job taking care of your energy levels!');
+              }}
+            >
+              <Zap size={24} color="#00B894" />
+              <Text style={styles.fitnessCardTitle}>Energy Boost</Text>
+              <Text style={styles.fitnessCardDescription}>Quick energy tips</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1489,29 +1518,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.7,
   },
-  fitnessActions: {
+  fitnessGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: 24,
     justifyContent: 'space-between',
   },
-  fitnessActionButton: {
-    backgroundColor: '#FF6B6B',
+  fitnessCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 12,
     padding: 16,
-    flex: 0.48,
-    flexDirection: 'row',
+    width: '48%',
+    marginBottom: 12,
     alignItems: 'center',
-    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
-  fitnessActionButtonText: {
-    color: 'white',
+  fitnessCardTitle: {
     fontSize: 14,
     fontWeight: '600',
-    marginLeft: 8,
+    color: '#2C3E50',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  fitnessCardDescription: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginTop: 4,
+    textAlign: 'center',
   },
 });

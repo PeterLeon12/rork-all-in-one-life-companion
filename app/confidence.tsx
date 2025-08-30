@@ -55,6 +55,22 @@ const initialChallenges = [
     completed: false,
     points: 8,
     category: 'body'
+  },
+  {
+    id: 5,
+    title: 'Break a Bad Habit',
+    description: 'Identify and avoid one limiting habit today',
+    completed: false,
+    points: 20,
+    category: 'freedom'
+  },
+  {
+    id: 6,
+    title: 'Face a Fear',
+    description: 'Do something that makes you slightly uncomfortable',
+    completed: false,
+    points: 25,
+    category: 'courage'
   }
 ];
 
@@ -81,9 +97,14 @@ const confidenceTips = [
     icon: Award
   },
   {
-    title: 'Preparation',
-    tip: 'Confidence comes from being prepared. Practice makes perfect.',
+    title: 'Break Free',
+    tip: 'Identify limiting habits and replace them with empowering ones.',
     icon: Shield
+  },
+  {
+    title: 'Face Fears',
+    tip: 'Take one small step outside your comfort zone daily.',
+    icon: TrendingUp
   }
 ];
 
@@ -180,7 +201,7 @@ export default function ConfidenceScreen() {
     <>
       <Stack.Screen 
         options={{ 
-          title: "Confidence & Security",
+          title: "Confidence & Freedom",
           headerStyle: { backgroundColor: '#FFD93D' },
           headerTintColor: 'white',
           headerTitleStyle: { fontWeight: 'bold' }
@@ -198,7 +219,7 @@ export default function ConfidenceScreen() {
           >
             <View style={styles.headerContent}>
               <Shield size={32} color="white" />
-              <Text style={styles.headerTitle}>Confidence Builder</Text>
+              <Text style={styles.headerTitle}>Confidence & Freedom</Text>
               <Text style={styles.headerScore}>Level 8</Text>
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>

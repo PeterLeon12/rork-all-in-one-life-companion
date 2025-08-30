@@ -28,11 +28,11 @@ const quickSessions = [
     icon: Sunrise
   },
   {
-    title: 'Stress Relief',
+    title: 'Creative Flow',
     duration: '10 min', 
-    description: 'Release tension and worry',
+    description: 'Unlock your creative potential',
     color: '#3498DB',
-    icon: Heart
+    icon: Sparkles
   },
   {
     title: 'Evening Wind Down',
@@ -43,7 +43,35 @@ const quickSessions = [
   }
 ];
 
-const todaysPrompt = "What am I most grateful for in this moment?";
+const todaysPrompts = [
+  "What am I most grateful for in this moment?",
+  "What creative idea is calling to me today?",
+  "How can I express my authentic self?",
+  "What inspires me to create?"
+];
+
+const creativeActivities = [
+  {
+    title: 'Free Writing',
+    description: 'Write continuously for 10 minutes without stopping',
+    duration: '10 min',
+    color: '#E74C3C'
+  },
+  {
+    title: 'Mindful Drawing',
+    description: 'Draw what you see or feel in the present moment',
+    duration: '15 min',
+    color: '#9B59B6'
+  },
+  {
+    title: 'Creative Visualization',
+    description: 'Imagine and visualize your next creative project',
+    duration: '8 min',
+    color: '#3498DB'
+  }
+];
+
+const todaysPrompt = todaysPrompts[Math.floor(Math.random() * todaysPrompts.length)];
 
 export default function MindfulnessScreen() {
   const [meditationTime, setMeditationTime] = React.useState(5 * 60);
@@ -119,7 +147,7 @@ export default function MindfulnessScreen() {
     <>
       <Stack.Screen 
         options={{ 
-          title: "Mindfulness",
+          title: "Mindfulness & Creativity",
           headerStyle: { backgroundColor: '#9B59B6' },
           headerTintColor: 'white',
           headerTitleStyle: { fontWeight: 'bold' }
@@ -136,7 +164,7 @@ export default function MindfulnessScreen() {
             end={{ x: 1, y: 1 }}
           >
             <Brain size={32} color="white" />
-            <Text style={styles.headerTitle}>Find Your Center</Text>
+            <Text style={styles.headerTitle}>Mindfulness & Creativity</Text>
             <Text style={styles.headerSubtitle}>7-day meditation streak</Text>
             
             <TouchableOpacity 
@@ -202,13 +230,30 @@ export default function MindfulnessScreen() {
           </View>
         </View>
 
+        {/* Creative Activities */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Creative Practices</Text>
+          {creativeActivities.map((activity, index) => (
+            <TouchableOpacity key={index} style={styles.sessionCard} activeOpacity={0.7}>
+              <View style={[styles.sessionIcon, { backgroundColor: activity.color + '20' }]}>
+                <Sparkles size={24} color={activity.color} />
+              </View>
+              <View style={styles.sessionContent}>
+                <Text style={styles.sessionTitle}>{activity.title}</Text>
+                <Text style={styles.sessionDescription}>{activity.description}</Text>
+                <Text style={styles.sessionDuration}>{activity.duration}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Mindful Quote */}
         <View style={styles.section}>
           <View style={styles.quoteCard}>
             <Text style={styles.quoteText}>
-              &ldquo;Peace comes from within. Do not seek it without.&rdquo;
+              &ldquo;Creativity takes courage. The mind that opens to a new idea never returns to its original size.&rdquo;
             </Text>
-            <Text style={styles.quoteAuthor}>— Buddha</Text>
+            <Text style={styles.quoteAuthor}>— Henri Matisse</Text>
           </View>
         </View>
       </ScrollView>

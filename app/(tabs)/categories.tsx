@@ -38,21 +38,12 @@ interface Category {
 const categories: Category[] = [
   {
     id: 'health',
-    title: 'Health & Wellness',
-    description: 'Complete mind and body wellness toolkit',
+    title: 'Health & Fitness',
+    description: 'Complete physical wellness: health, fitness, nutrition, and energy',
     icon: Heart,
     gradient: ['#FF6B6B', '#FF8E8E'],
-    features: ['Mental Health', 'Sleep Optimization', 'Nutrition', 'Stress Management', 'Medical Care', 'Preventive Health'],
+    features: ['Mental Health', 'Fitness Training', 'Nutrition', 'Sleep Optimization', 'Energy Management', 'Sports & Activities'],
     route: '/health'
-  },
-  {
-    id: 'fitness',
-    title: 'Fitness & Sports',
-    description: 'Athletic performance, outdoor activities, and sports training',
-    icon: Dumbbell,
-    gradient: ['#FF7675', '#E17055'],
-    features: ['Workout Plans', 'Sports Training', 'Outdoor Activities', 'Athletic Performance', 'Team Sports', 'Adventure Sports'],
-    route: '/fitness'
   },
   {
     id: 'wealth',
@@ -74,11 +65,11 @@ const categories: Category[] = [
   },
   {
     id: 'confidence',
-    title: 'Confidence & Security',
-    description: 'Build unshakeable self-confidence and inner strength',
+    title: 'Confidence & Freedom',
+    description: 'Build self-confidence and break free from limiting habits',
     icon: Shield,
     gradient: ['#FFD93D', '#FF9F43'],
-    features: ['Self-Confidence', 'Body Image', 'Social Anxiety', 'Impostor Syndrome'],
+    features: ['Self-Confidence', 'Break Bad Habits', 'Overcome Fears', 'Personal Empowerment', 'Behavioral Change'],
     route: '/confidence'
   },
   {
@@ -101,21 +92,12 @@ const categories: Category[] = [
   },
   {
     id: 'mindfulness',
-    title: 'Mindfulness & Spirit',
-    description: 'Find inner peace, spiritual growth, and philosophical wisdom',
+    title: 'Mindfulness & Creativity',
+    description: 'Inner peace, spiritual growth, and creative self-expression',
     icon: Brain,
     gradient: ['#74B9FF', '#0984E3'],
-    features: ['Meditation', 'Journaling', 'Gratitude Practice', 'Spiritual Growth', 'Philosophy', 'Religious Practice'],
+    features: ['Meditation', 'Creative Arts', 'Journaling', 'Music & Writing', 'Spiritual Growth', 'Artistic Expression'],
     route: '/mindfulness'
-  },
-  {
-    id: 'creativity',
-    title: 'Creativity & Arts',
-    description: 'Unleash creativity through arts, music, writing, and entertainment',
-    icon: Palette,
-    gradient: ['#FD79A8', '#FDCB6E'],
-    features: ['Art & Design', 'Writing', 'Music', 'Crafts', 'Photography', 'Entertainment'],
-    route: '/creativity'
   },
   {
     id: 'lifestyle',
@@ -126,41 +108,15 @@ const categories: Category[] = [
     features: ['Home Organization', 'Cooking', 'Interior Design', 'Home Improvement', 'Gardening', 'Life Optimization'],
     route: '/lifestyle'
   },
-  {
-    id: 'energy',
-    title: 'Energy & Vitality',
-    description: 'Boost your energy and live with vitality',
-    icon: Zap,
-    gradient: ['#00B894', '#00CEC9'],
-    features: ['Energy Management', 'Nutrition', 'Exercise', 'Recovery'],
-    route: '/energy'
-  },
-  {
-    id: 'break-free',
-    title: 'Break Free',
-    description: 'Break free from unwanted habits and build positive ones',
-    icon: ShieldCheck,
-    gradient: ['#00B894', '#55A3FF'],
-    features: ['Habit Breaking', 'Behavioral Change', 'Support Groups', 'Positive Habits'],
-    route: '/break-free'
-  },
+
   {
     id: 'travel',
-    title: 'Travel & Adventure',
-    description: 'Explore the world and embrace new adventures',
+    title: 'Travel & Community',
+    description: 'Explore the world, connect with others, and make positive impact',
     icon: MapPin,
     gradient: ['#FF9500', '#FF5722'],
-    features: ['Travel Planning', 'Cultural Exploration', 'Adventure Activities', 'Language Immersion', 'Photography', 'Local Experiences'],
+    features: ['Travel Planning', 'Cultural Exploration', 'Community Service', 'Volunteering', 'Social Impact', 'Global Connections'],
     route: '/travel'
-  },
-  {
-    id: 'community',
-    title: 'Community & Service',
-    description: 'Give back to community and make a positive impact',
-    icon: HandHeart,
-    gradient: ['#8BC34A', '#4CAF50'],
-    features: ['Volunteering', 'Community Service', 'Social Impact', 'Charity Work', 'Environmental Action', 'Civic Engagement'],
-    route: '/community'
   }
 ];
 
@@ -202,17 +158,17 @@ export default function CategoriesScreen() {
           break;
         case 'wellness':
           filtered = filtered.filter(category => 
-            ['health', 'fitness', 'mindfulness', 'energy'].includes(category.id)
+            ['health', 'mindfulness'].includes(category.id)
           );
           break;
         case 'growth':
           filtered = filtered.filter(category => 
-            ['learning', 'confidence', 'productivity', 'creativity'].includes(category.id)
+            ['learning', 'confidence', 'productivity', 'mindfulness'].includes(category.id)
           );
           break;
         case 'lifestyle':
           filtered = filtered.filter(category => 
-            ['wealth', 'relationships', 'lifestyle', 'travel', 'community'].includes(category.id)
+            ['wealth', 'relationships', 'lifestyle', 'travel'].includes(category.id)
           );
           break;
       }

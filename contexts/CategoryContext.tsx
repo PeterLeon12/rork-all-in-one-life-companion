@@ -3,20 +3,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
 
 export interface CategoryScore {
-  health: number;
-  fitness: number;
+  health: number; // Now includes fitness and energy
+  fitness: number; // Legacy - combined into health
   wealth: number;
   relationships: number;
-  confidence: number;
+  confidence: number; // Now includes break-free
   learning: number;
   productivity: number;
-  mindfulness: number;
-  creativity: number;
-  energy: number;
+  mindfulness: number; // Now includes creativity
+  creativity: number; // Legacy - combined into mindfulness
+  energy: number; // Legacy - combined into health
   lifestyle: number;
-  breakFree: number;
-  travel: number;
-  community: number;
+  breakFree: number; // Legacy - combined into confidence
+  travel: number; // Now includes community
+  community: number; // Legacy - combined into travel
 }
 
 export interface CategoryActivity {
@@ -33,19 +33,19 @@ export interface CategoryActivity {
 
 const initialScores: CategoryScore = {
   health: 75,
-  fitness: 70,
+  fitness: 70, // Combined into health
   wealth: 65,
   relationships: 80,
   confidence: 72,
   learning: 78,
   productivity: 85,
   mindfulness: 68,
-  creativity: 74,
-  energy: 76,
+  creativity: 74, // Combined into mindfulness
+  energy: 76, // Combined into health
   lifestyle: 73,
-  breakFree: 60,
+  breakFree: 60, // Combined into confidence
   travel: 50,
-  community: 55
+  community: 55 // Combined into travel
 };
 
 // Define interconnections between categories
