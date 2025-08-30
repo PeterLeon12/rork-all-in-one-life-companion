@@ -6,7 +6,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   User, 
   Save,
-  Calendar,
   Ruler,
   Weight,
   Activity,
@@ -20,10 +19,7 @@ interface UserProfile {
   weight: number; // in kg
   gender: 'male' | 'female' | 'other';
   activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
-  fitnessGoals: string[];
   medicalConditions: string[];
-  preferredWorkoutTime: 'morning' | 'afternoon' | 'evening';
-  workoutDuration: number; // in minutes
 }
 
 const activityLevels = [
@@ -34,22 +30,7 @@ const activityLevels = [
   { key: 'very_active', label: 'Very Active', description: 'Very hard exercise, physical job' }
 ];
 
-const fitnessGoalOptions = [
-  'Weight Loss',
-  'Muscle Gain',
-  'Endurance',
-  'Strength',
-  'Flexibility',
-  'General Health',
-  'Stress Relief',
-  'Better Sleep'
-];
 
-const workoutTimes = [
-  { key: 'morning', label: 'Morning', description: '6:00 AM - 12:00 PM' },
-  { key: 'afternoon', label: 'Afternoon', description: '12:00 PM - 6:00 PM' },
-  { key: 'evening', label: 'Evening', description: '6:00 PM - 10:00 PM' }
-];
 
 export default function ProfileSetupScreen() {
   const [profile, setProfile] = useState<UserProfile>({
@@ -59,10 +40,7 @@ export default function ProfileSetupScreen() {
     weight: 70,
     gender: 'male',
     activityLevel: 'moderate',
-    fitnessGoals: [],
-    medicalConditions: [],
-    preferredWorkoutTime: 'morning',
-    workoutDuration: 30
+    medicalConditions: []
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -84,10 +62,7 @@ export default function ProfileSetupScreen() {
           weight: parsedProfile.weight || 70,
           gender: parsedProfile.gender || 'male',
           activityLevel: parsedProfile.activityLevel || 'moderate',
-          fitnessGoals: parsedProfile.fitnessGoals || [],
-          medicalConditions: parsedProfile.medicalConditions || [],
-          preferredWorkoutTime: parsedProfile.preferredWorkoutTime || 'morning',
-          workoutDuration: parsedProfile.workoutDuration || 30
+          medicalConditions: parsedProfile.medicalConditions || []
         });
       }
     } catch (error) {
@@ -101,10 +76,7 @@ export default function ProfileSetupScreen() {
       return;
     }
 
-    if (profile.fitnessGoals.length === 0) {
-      Alert.alert('Error', 'Please select at least one fitness goal');
-      return;
-    }
+
 
     setIsLoading(true);
     try {
@@ -131,14 +103,7 @@ export default function ProfileSetupScreen() {
     }
   };
 
-  const toggleFitnessGoal = (goal: string) => {
-    setProfile(prev => ({
-      ...prev,
-      fitnessGoals: prev.fitnessGoals.includes(goal)
-        ? prev.fitnessGoals.filter(g => g !== goal)
-        : [...prev.fitnessGoals, goal]
-    }));
-  };
+
 
   const calculateBMI = () => {
     if (!profile.height || !profile.weight || profile.height <= 0 || profile.weight <= 0) {
@@ -324,88 +289,7 @@ export default function ProfileSetupScreen() {
                 ))}
               </View>
 
-              {/* Fitness Goals */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Fitness Goals</Text>
-                <Text style={styles.sectionSubtitle}>Select all that apply</Text>
-                <View style={styles.goalsGrid}>
-                  {fitnessGoalOptions.map((goal) => (
-                    <TouchableOpacity
-                      key={goal}
-                      style={[
-                        styles.goalChip,
-                        profile.fitnessGoals.includes(goal) && styles.selectedGoalChip
-                      ]}
-                      onPress={() => toggleFitnessGoal(goal)}
-                    >
-                      <Text style={[
-                        styles.goalChipText,
-                        profile.fitnessGoals.includes(goal) && styles.selectedGoalChipText
-                      ]}>
-                        {goal}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
 
-              {/* Workout Preferences */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Workout Preferences</Text>
-                
-                <Text style={styles.inputLabel}>Preferred Workout Time</Text>
-                {workoutTimes.map((time) => (
-                  <TouchableOpacity
-                    key={time.key}
-                    style={[
-                      styles.optionCard,
-                      profile.preferredWorkoutTime === time.key && styles.selectedOptionCard
-                    ]}
-                    onPress={() => setProfile(prev => ({ ...prev, preferredWorkoutTime: time.key as any }))}
-                  >
-                    <View style={styles.optionContent}>
-                      <Text style={[
-                        styles.optionTitle,
-                        profile.preferredWorkoutTime === time.key && styles.selectedOptionTitle
-                      ]}>
-                        {time.label}
-                      </Text>
-                      <Text style={[
-                        styles.optionDescription,
-                        profile.preferredWorkoutTime === time.key && styles.selectedOptionDescription
-                      ]}>
-                        {time.description}
-                      </Text>
-                    </View>
-                    {profile.preferredWorkoutTime === time.key && (
-                      <Calendar size={20} color="#FF6B6B" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-
-                <View style={styles.inputCard}>
-                  <Text style={styles.inputLabel}>Preferred Workout Duration (minutes)</Text>
-                  <View style={styles.durationSelector}>
-                    {[15, 30, 45, 60, 90].map((duration) => (
-                      <TouchableOpacity
-                        key={duration}
-                        style={[
-                          styles.durationButton,
-                          profile.workoutDuration === duration && styles.selectedDurationButton
-                        ]}
-                        onPress={() => setProfile(prev => ({ ...prev, workoutDuration: duration }))}
-                      >
-                        <Text style={[
-                          styles.durationButtonText,
-                          profile.workoutDuration === duration && styles.selectedDurationButtonText
-                        ]}>
-                          {duration}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              </View>
 
               {/* Save Button */}
               <View style={styles.saveSection}>
@@ -613,57 +497,7 @@ const styles = StyleSheet.create({
     color: '#FF6B6B',
     opacity: 0.8,
   },
-  goalsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 24,
-  },
-  goalChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    margin: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  selectedGoalChip: {
-    backgroundColor: '#FF6B6B',
-  },
-  goalChipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2C3E50',
-  },
-  selectedGoalChipText: {
-    color: 'white',
-  },
-  durationSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  durationButton: {
-    flex: 1,
-    paddingVertical: 12,
-    marginHorizontal: 2,
-    borderRadius: 8,
-    backgroundColor: '#F8F9FA',
-    alignItems: 'center',
-  },
-  selectedDurationButton: {
-    backgroundColor: '#FF6B6B',
-  },
-  durationButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#7F8C8D',
-  },
-  selectedDurationButtonText: {
-    color: 'white',
-  },
+
   saveSection: {
     paddingHorizontal: 24,
     paddingBottom: 32,
