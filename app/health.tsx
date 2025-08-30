@@ -17,7 +17,9 @@ import {
   X,
   Minus,
   RotateCcw,
-  TrendingUp
+  TrendingUp,
+  BarChart3,
+  User
 } from 'lucide-react-native';
 import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
 
@@ -726,6 +728,28 @@ export default function HealthScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Health Programs</Text>
           {healthPrograms.map(renderProgram)}
+        </View>
+
+        {/* Fitness Tracking */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Fitness Tracking</Text>
+          <View style={styles.fitnessActions}>
+            <TouchableOpacity 
+              style={styles.fitnessActionButton}
+              onPress={() => router.push('/fitness-history')}
+            >
+              <BarChart3 size={24} color="white" />
+              <Text style={styles.fitnessActionButtonText}>View History</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.fitnessActionButton, { backgroundColor: '#4ECDC4' }]}
+              onPress={() => router.push('/profile-setup')}
+            >
+              <User size={24} color="white" />
+              <Text style={styles.fitnessActionButtonText}>Setup Profile</Text>
+            </TouchableOpacity>
+          </View>
         </View>
             </ScrollView>
           </View>
@@ -1464,5 +1488,30 @@ const styles = StyleSheet.create({
   stepTrackingIndicator: {
     fontSize: 12,
     opacity: 0.7,
+  },
+  fitnessActions: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+  },
+  fitnessActionButton: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 12,
+    padding: 16,
+    flex: 0.48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  fitnessActionButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
