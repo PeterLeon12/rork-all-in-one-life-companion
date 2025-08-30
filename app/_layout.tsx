@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { CategoryProvider } from "@/contexts/CategoryContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
+import { HealthDataProvider } from "@/contexts/HealthDataContext";
 import { trpc, trpcClient } from "@/lib/trpc";
 import AuthGuard from "@/components/AuthGuard";
 
@@ -41,11 +42,13 @@ export default function RootLayout() {
         <ThemeProvider>
           <UserProvider>
             <CategoryProvider>
-              <GestureHandlerRootView>
-                <AuthGuard>
-                  <RootLayoutNav />
-                </AuthGuard>
-              </GestureHandlerRootView>
+              <HealthDataProvider>
+                <GestureHandlerRootView>
+                  <AuthGuard>
+                    <RootLayoutNav />
+                  </AuthGuard>
+                </GestureHandlerRootView>
+              </HealthDataProvider>
             </CategoryProvider>
           </UserProvider>
         </ThemeProvider>
