@@ -1,7 +1,7 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { 
   Target, 
   CheckCircle, 
@@ -12,18 +12,13 @@ import {
   Pause,
   RotateCcw,
   TrendingUp,
-  Award
+  MessageCircle,
+  Zap,
+  Timer
 } from 'lucide-react-native';
 import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
 
 const { width } = Dimensions.get('window');
-
-const productivityMetrics = [
-  { label: 'Goals Completed', value: '23/30', percentage: 77, icon: Target, color: '#FD79A8' },
-  { label: 'Focus Time', value: '4.2h', target: '6h', icon: Clock, color: '#4ECDC4' },
-  { label: 'Habits Streak', value: '12 days', icon: Calendar, color: '#FFD93D' },
-  { label: 'Productivity Score', value: '85%', icon: TrendingUp, color: '#6C5CE7' }
-];
 
 const todayGoals = [
   {
@@ -32,8 +27,7 @@ const todayGoals = [
     category: 'Work',
     priority: 'high',
     completed: false,
-    estimatedTime: '2h',
-    deadline: '5:00 PM'
+    estimatedTime: '2h'
   },
   {
     id: 2,
@@ -41,8 +35,7 @@ const todayGoals = [
     category: 'Health',
     priority: 'medium',
     completed: true,
-    estimatedTime: '45m',
-    deadline: '8:00 AM'
+    estimatedTime: '45m'
   },
   {
     id: 3,
@@ -50,42 +43,36 @@ const todayGoals = [
     category: 'Learning',
     priority: 'low',
     completed: false,
-    estimatedTime: '30m',
-    deadline: '9:00 PM'
-  },
-  {
-    id: 4,
-    title: 'Call mom',
-    category: 'Personal',
-    priority: 'medium',
-    completed: false,
-    estimatedTime: '15m',
-    deadline: '7:00 PM'
+    estimatedTime: '30m'
   }
 ];
 
 const habits = [
-  { name: 'Drink 8 glasses of water', streak: 12, completed: true, icon: '💧' },
-  { name: 'Meditate for 10 minutes', streak: 8, completed: true, icon: '🧘' },
-  { name: 'Write in journal', streak: 15, completed: false, icon: '📝' },
-  { name: 'Exercise', streak: 5, completed: true, icon: '💪' },
-  { name: 'Read before bed', streak: 9, completed: false, icon: '📚' }
+  { name: 'Morning meditation', streak: 8, completed: true, icon: '🧘' },
+  { name: 'Daily journaling', streak: 15, completed: false, icon: '📝' },
+  { name: 'Evening reading', streak: 9, completed: false, icon: '📚' }
 ];
 
 const focusSessions = [
-  { task: 'Project Research', duration: '25:00', status: 'completed', type: 'pomodoro' },
-  { task: 'Email Management', duration: '15:00', status: 'completed', type: 'focus' },
-  { task: 'Design Review', duration: '45:00', status: 'in-progress', type: 'deep-work' }
+  { task: 'Project Research', duration: '25:00', status: 'completed' },
+  { task: 'Email Management', duration: '15:00', status: 'completed' },
+  { task: 'Design Review', duration: '45:00', status: 'in-progress' }
 ];
 
 export default function ProductivityScreen() {
   const { addActivity } = useCategories();
-  const { score: productivityScore, weeklyImprovement, allScores } = useCategoryData('productivity');
+  const { score: productivityScore, allScores } = useCategoryData('productivity');
   
-  const [pomodoroTime, setPomodoroTime] = React.useState(25 * 60); // 25 minutes in seconds
+  const [pomodoroTime, setPomodoroTime] = React.useState(25 * 60);
   const [isRunning, setIsRunning] = React.useState(false);
   const [goals, setGoals] = React.useState(todayGoals);
   const [dailyHabits, setDailyHabits] = React.useState(habits);
+  
+  const completedGoals = goals.filter(goal => goal.completed).length;
+  const totalGoals = goals.length;
+  const completedHabits = dailyHabits.filter(habit => habit.completed).length;
+  const totalHabits = dailyHabits.length;
+  const focusTimeToday = '2.5h';
 
   // Timer effect
   React.useEffect(() => {
@@ -123,20 +110,23 @@ export default function ProductivityScreen() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const renderMetricCard = (metric: any, index: number) => {
-    const IconComponent = metric.icon;
-    
-    return (
-      <View key={index} style={styles.metricCard}>
-        <View style={[styles.metricIcon, { backgroundColor: metric.color + '20' }]}>
-          <IconComponent size={20} color={metric.color} />
-        </View>
-        <Text style={styles.metricValue}>{metric.value}</Text>
-        <Text style={styles.metricLabel}>{metric.label}</Text>
-        {metric.target && (
-          <Text style={styles.metricTarget}>Target: {metric.target}</Text>
-        )}
-      </View>
+  const addNewGoal = () => {
+    Alert.prompt(
+      'New Goal',
+      'What would you like to accomplish today?',
+      (text) => {
+        if (text && text.trim()) {
+          const newGoal = {
+            id: Date.now(),
+            title: text.trim(),
+            category: 'Personal',
+            priority: 'medium' as const,
+            completed: false,
+            estimatedTime: '30m'
+          };
+          setGoals(prev => [...prev, newGoal]);
+        }
+      }
     );
   };
 
@@ -192,7 +182,6 @@ export default function ProductivityScreen() {
               </Text>
             </View>
             <Text style={styles.goalTime}>{goal.estimatedTime}</Text>
-            <Text style={styles.goalDeadline}>Due: {goal.deadline}</Text>
           </View>
         </View>
       </View>
@@ -252,7 +241,6 @@ export default function ProductivityScreen() {
       switch (status) {
         case 'completed': return '#27AE60';
         case 'in-progress': return '#3498DB';
-        case 'paused': return '#F39C12';
         default: return '#7F8C8D';
       }
     };
@@ -263,13 +251,12 @@ export default function ProductivityScreen() {
       <View key={index} style={styles.sessionCard}>
         <View style={styles.sessionInfo}>
           <Text style={styles.sessionTask}>{session.task}</Text>
-          <Text style={styles.sessionType}>{session.type.replace('-', ' ')}</Text>
         </View>
         <View style={styles.sessionMeta}>
           <Text style={styles.sessionDuration}>{session.duration}</Text>
           <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
             <Text style={[styles.statusText, { color: statusColor }]}>
-              {session.status.replace('-', ' ')}
+              {session.status === 'in-progress' ? 'Active' : 'Done'}
             </Text>
           </View>
         </View>
@@ -281,10 +268,18 @@ export default function ProductivityScreen() {
     <>
       <Stack.Screen 
         options={{ 
-          title: "Productivity & Goals",
+          title: "Productivity",
           headerStyle: { backgroundColor: '#FD79A8' },
           headerTintColor: 'white',
-          headerTitleStyle: { fontWeight: 'bold' }
+          headerTitleStyle: { fontWeight: 'bold' },
+          headerRight: () => (
+            <TouchableOpacity 
+              onPress={() => router.push('/productivity-chat')}
+              style={{ marginRight: 16 }}
+            >
+              <MessageCircle size={24} color="white" />
+            </TouchableOpacity>
+          )
         }} 
       />
       
@@ -306,27 +301,28 @@ export default function ProductivityScreen() {
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.headerContent}>
-              <Target size={32} color="white" />
-              <Text style={styles.headerTitle}>Productivity Score</Text>
-              <Text style={styles.headerScore}>{productivityScore}/100</Text>
+              <Zap size={32} color="white" />
+              <Text style={styles.headerTitle}>Today&apos;s Progress</Text>
+              <Text style={styles.headerScore}>{Math.round((completedGoals / totalGoals + completedHabits / totalHabits) * 50)}%</Text>
               <Text style={styles.headerSubtitle}>
-                {weeklyImprovement > 0 ? `+${weeklyImprovement} this week!` : "You're building great habits!"}
+                {completedGoals}/{totalGoals} goals • {completedHabits}/{totalHabits} habits
               </Text>
             </View>
           </LinearGradient>
         </View>
 
-        {/* Pomodoro Timer */}
+        {/* Focus Timer */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Focus Timer</Text>
           <View style={styles.pomodoroCard}>
             <View style={styles.timerDisplay}>
+              <Timer size={28} color="#FD79A8" />
               <Text style={styles.timerText}>{formatTime(pomodoroTime)}</Text>
-              <Text style={styles.timerLabel}>Focus Session</Text>
+              <Text style={styles.timerLabel}>Pomodoro Session</Text>
             </View>
             <View style={styles.timerControls}>
               <TouchableOpacity 
-                style={[styles.timerButton, { backgroundColor: '#4ECDC4' }]}
+                style={[styles.timerButton, { backgroundColor: isRunning ? '#FF6B6B' : '#4ECDC4' }]}
                 onPress={() => setIsRunning(!isRunning)}
               >
                 {isRunning ? (
@@ -336,7 +332,7 @@ export default function ProductivityScreen() {
                 )}
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.timerButton, { backgroundColor: '#FF6B6B' }]}
+                style={[styles.timerButton, { backgroundColor: '#95A5A6' }]}
                 onPress={() => {
                   setIsRunning(false);
                   setPomodoroTime(25 * 60);
@@ -348,11 +344,25 @@ export default function ProductivityScreen() {
           </View>
         </View>
 
-        {/* Productivity Metrics */}
+        {/* Quick Stats */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Today&apos;s Overview</Text>
-          <View style={styles.metricsGrid}>
-            {productivityMetrics.map(renderMetricCard)}
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <Target size={24} color="#FD79A8" />
+              <Text style={styles.statValue}>{completedGoals}/{totalGoals}</Text>
+              <Text style={styles.statLabel}>Goals</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Calendar size={24} color="#4ECDC4" />
+              <Text style={styles.statValue}>{completedHabits}/{totalHabits}</Text>
+              <Text style={styles.statLabel}>Habits</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Clock size={24} color="#FFD93D" />
+              <Text style={styles.statValue}>{focusTimeToday}</Text>
+              <Text style={styles.statLabel}>Focus Time</Text>
+            </View>
           </View>
         </View>
 
@@ -360,7 +370,7 @@ export default function ProductivityScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Today&apos;s Goals</Text>
-            <TouchableOpacity style={styles.addButton}>
+            <TouchableOpacity style={styles.addButton} onPress={addNewGoal}>
               <Plus size={20} color="#667eea" />
             </TouchableOpacity>
           </View>
@@ -373,37 +383,37 @@ export default function ProductivityScreen() {
           {dailyHabits.map(renderHabit)}
         </View>
 
-        {/* Focus Sessions */}
+        {/* Recent Sessions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Focus Sessions</Text>
+          <Text style={styles.sectionTitle}>Recent Sessions</Text>
           <View style={styles.sessionsContainer}>
             {focusSessions.map(renderFocusSession)}
           </View>
         </View>
 
-        {/* Weekly Insights */}
+        {/* Weekly Progress */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week&apos;s Progress</Text>
+          <Text style={styles.sectionTitle}>Weekly Progress</Text>
           <View style={styles.insightCard}>
             <View style={styles.insightHeader}>
-              <Award size={24} color="#FD79A8" />
-              <Text style={styles.insightTitle}>Productivity Insights</Text>
+              <TrendingUp size={24} color="#FD79A8" />
+              <Text style={styles.insightTitle}>Your Impact</Text>
             </View>
             <Text style={styles.insightText}>
-              Your productivity boosts other areas! Completing goals increases confidence (+{allScores.confidence}%) and wealth mindset (+{allScores.wealth}%).
+              Productivity drives growth across all areas. Your focus sessions boost confidence and create momentum for wealth building.
             </Text>
             <View style={styles.insightStats}>
+              <View style={styles.insightStat}>
+                <Text style={styles.insightStatValue}>{productivityScore}%</Text>
+                <Text style={styles.insightStatLabel}>Productivity</Text>
+              </View>
               <View style={styles.insightStat}>
                 <Text style={styles.insightStatValue}>{allScores.confidence}%</Text>
                 <Text style={styles.insightStatLabel}>Confidence</Text>
               </View>
               <View style={styles.insightStat}>
                 <Text style={styles.insightStatValue}>{allScores.wealth}%</Text>
-                <Text style={styles.insightStatLabel}>Wealth Mindset</Text>
-              </View>
-              <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>{Math.round((allScores.productivity + allScores.confidence + allScores.wealth) / 3)}%</Text>
-                <Text style={styles.insightStatLabel}>Growth Score</Text>
+                <Text style={styles.insightStatLabel}>Wealth</Text>
               </View>
             </View>
           </View>
@@ -510,9 +520,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   timerText: {
-    fontSize: 48,
+    fontSize: 42,
     fontWeight: 'bold',
     color: '#2C3E50',
+    marginTop: 8,
     marginBottom: 8,
   },
   timerLabel: {
@@ -530,50 +541,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  metricsGrid: {
+  statsContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     paddingHorizontal: 24,
     justifyContent: 'space-between',
   },
-  metricCard: {
+  statCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    width: (width - 60) / 2,
+    width: (width - 72) / 3,
     padding: 16,
     borderRadius: 16,
-    marginBottom: 12,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  metricIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  metricValue: {
-    fontSize: 20,
+  statValue: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#2C3E50',
+    marginTop: 8,
     marginBottom: 4,
   },
-  metricLabel: {
+  statLabel: {
     fontSize: 12,
     color: '#7F8C8D',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  metricTarget: {
-    fontSize: 10,
-    color: '#95A5A6',
     textAlign: 'center',
   },
   goalCard: {
@@ -636,10 +632,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#7F8C8D',
   },
-  goalDeadline: {
-    fontSize: 12,
-    color: '#E74C3C',
-  },
+
   habitCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     marginHorizontal: 24,
@@ -710,11 +703,7 @@ const styles = StyleSheet.create({
     color: '#2C3E50',
     marginBottom: 4,
   },
-  sessionType: {
-    fontSize: 12,
-    color: '#7F8C8D',
-    textTransform: 'capitalize',
-  },
+
   sessionMeta: {
     alignItems: 'flex-end',
   },
