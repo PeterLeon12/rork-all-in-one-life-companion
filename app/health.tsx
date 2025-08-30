@@ -1046,11 +1046,11 @@ export default function HealthScreen() {
     setPersonalizedTips(tips);
   };
 
-  // Save data whenever goals or metrics change (debounced and optimized)
+  // Save data whenever goals or metrics change (immediate save for better reliability)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       saveHealthData();
-    }, 1000); // Increased debounce to 1 second to reduce save frequency
+    }, 100); // Reduced debounce to 100ms for better responsiveness
     
     return () => clearTimeout(timeoutId);
   }, [healthGoals, healthMetrics, dailyStreak, lastResetDate, completedGoalsToday, totalGoalsCompleted]);
@@ -1073,38 +1073,30 @@ export default function HealthScreen() {
         return goal;
       });
       
-      // Calculate counters from the updated goals to avoid multiple state updates
-      const newCompletedCount = updatedGoals.filter(goal => goal.completed).length;
-      const currentCompletedCount = prev.filter(goal => goal.completed).length;
-      const difference = newCompletedCount - currentCompletedCount;
-      
-      // Update counters in a single batch
-      if (difference !== 0) {
-        setCompletedGoalsToday(current => Math.max(0, current + difference));
-        setTotalGoalsCompleted(current => Math.max(0, current + difference));
-        
-        // Add activity for completion (only when completing, not uncompleting)
-        if (difference > 0) {
-          const completedGoal = updatedGoals.find(goal => goal.id === goalId);
-          if (completedGoal) {
-            // Use setTimeout to avoid blocking the UI update
-            setTimeout(() => {
-              const activityData = {
-                ...createActivityImpact.healthActivity(),
-                categoryId: 'health',
-                title: `Completed: ${completedGoal.title}`,
-                impact: { health: completedGoal.importance === 'high' ? 3 : completedGoal.importance === 'medium' ? 2 : 1 }
-              };
-              addActivity(activityData);
-              
-
-            }, 100);
-          }
-        }
-      }
-      
       return updatedGoals;
     });
+    
+    // Update counters separately to avoid state conflicts
+    setTimeout(() => {
+      setHealthGoals(currentGoals => {
+        const newCompletedCount = currentGoals.filter(goal => goal.completed).length;
+        setCompletedGoalsToday(newCompletedCount);
+        
+        // Add activity for completion
+        const toggledGoal = currentGoals.find(goal => goal.id === goalId);
+        if (toggledGoal?.completed) {
+          const activityData = {
+            ...createActivityImpact.healthActivity(),
+            categoryId: 'health',
+            title: `Completed: ${toggledGoal.title}`,
+            impact: { health: toggledGoal.importance === 'high' ? 3 : toggledGoal.importance === 'medium' ? 2 : 1 }
+          };
+          addActivity(activityData);
+        }
+        
+        return currentGoals;
+      });
+    }, 50);
   };
 
   // Initialize pedometer for real step tracking
@@ -1267,12 +1259,20 @@ export default function HealthScreen() {
   const saveGoalEdit = () => {
     if (!editingGoal) return;
     
+    const trimmedTitle = editGoalTitle.trim();
+    const trimmedDescription = editGoalDescription.trim();
+    
+    if (!trimmedTitle) {
+      Alert.alert('Error', 'Goal title cannot be empty');
+      return;
+    }
+    
     setHealthGoals(prev => prev.map(goal => {
       if (goal.id === editingGoal) {
         return {
           ...goal,
-          title: editGoalTitle.trim() || goal.title,
-          description: editGoalDescription.trim() || goal.description
+          title: trimmedTitle,
+          description: trimmedDescription || goal.description
         };
       }
       return goal;
@@ -1294,7 +1294,13 @@ export default function HealthScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            setHealthGoals(prev => prev.filter(goal => goal.id !== goalId));
+            setHealthGoals(prev => {
+              const filteredGoals = prev.filter(goal => goal.id !== goalId);
+              // Update completed count after deletion
+              const newCompletedCount = filteredGoals.filter(goal => goal.completed).length;
+              setCompletedGoalsToday(newCompletedCount);
+              return filteredGoals;
+            });
           }
         }
       ]
@@ -1316,7 +1322,10 @@ export default function HealthScreen() {
     };
     
     setHealthGoals(prev => [...prev, newGoal]);
-    openGoalEditModal(newGoal);
+    // Delay opening edit modal to ensure goal is added first
+    setTimeout(() => {
+      openGoalEditModal(newGoal);
+    }, 100);
   };
   
   const getCategoryColor = (category: string): string => {
@@ -1567,15 +1576,13 @@ export default function HealthScreen() {
                     <Edit3 size={16} color="#3498DB" />
                   </TouchableOpacity>
                   
-                  {goal.id.startsWith('custom_') && (
-                    <TouchableOpacity 
-                      style={styles.goalActionButton}
-                      onPress={() => deleteGoal(goal.id)}
-                      activeOpacity={0.7}
-                    >
-                      <Trash2 size={16} color="#E74C3C" />
-                    </TouchableOpacity>
-                  )}
+                  <TouchableOpacity 
+                    style={styles.goalActionButton}
+                    onPress={() => deleteGoal(goal.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Trash2 size={16} color="#E74C3C" />
+                  </TouchableOpacity>
                 </View>
               </View>
             );
