@@ -1,24 +1,23 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from 'expo-router';
 import { 
   Home, 
   ChefHat, 
   Sparkles,
-  CheckCircle,
   Star,
-  Plus,
   MessageCircle
 } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 
 const lifestyleMetrics = [
-  { label: 'Home Score', value: '89%', icon: Home, color: '#55A3FF' },
-  { label: 'Organization', value: '92%', icon: Sparkles, color: '#74B9FF' },
-  { label: 'Meal Planning', value: '85%', icon: ChefHat, color: '#003D82' },
-  { label: 'Life Quality', value: '94%', icon: Star, color: '#0984E3' }
+  { label: 'Home Score', value: '89%', icon: Home, color: '#55A3FF', trend: '+5%' },
+  { label: 'Organization', value: '92%', icon: Sparkles, color: '#74B9FF', trend: '+8%' },
+  { label: 'Meal Planning', value: '85%', icon: ChefHat, color: '#003D82', trend: '+12%' },
+  { label: 'Life Quality', value: '94%', icon: Star, color: '#0984E3', trend: '+3%' }
 ];
 
 const activeProjects = [
@@ -26,13 +25,17 @@ const activeProjects = [
     title: 'Living Room Refresh',
     progress: 75,
     deadline: '2 weeks',
-    color: '#55A3FF'
+    color: '#55A3FF',
+    icon: Home,
+    description: 'Furniture arrangement & decor'
   },
   {
     title: 'Kitchen Organization',
     progress: 90,
     deadline: '3 days',
-    color: '#74B9FF'
+    color: '#74B9FF',
+    icon: ChefHat,
+    description: 'Pantry & cabinet optimization'
   }
 ];
 
@@ -49,25 +52,75 @@ const weeklyStats = {
 };
 
 const todaysTasks = [
-  { task: 'File documents', area: 'Office', completed: false },
-  { task: 'Organize spice rack', area: 'Kitchen', completed: true },
-  { task: 'Arrange books', area: 'Living Room', completed: true }
+  {
+    task: 'File documents',
+    area: 'Office',
+    time: '9:00 AM',
+    description: 'Sort and organize paperwork',
+    completed: false,
+    icon: Sparkles,
+    color: '#74B9FF'
+  },
+  {
+    task: 'Organize spice rack',
+    area: 'Kitchen',
+    time: '2:00 PM',
+    description: 'Alphabetical arrangement',
+    completed: true,
+    icon: ChefHat,
+    color: '#003D82'
+  },
+  {
+    task: 'Arrange books',
+    area: 'Living Room',
+    time: '4:00 PM',
+    description: 'By genre and author',
+    completed: true,
+    icon: Home,
+    color: '#55A3FF'
+  }
 ];
 
 const lifestyleGoals = [
   {
-    title: 'Organized Home',
+    goal: 'Organized Home',
     progress: 82,
-    target: 'Complete by month end'
+    target: '15 areas',
+    current: '12 areas'
   },
   {
-    title: 'Healthy Meal Planning',
+    goal: 'Healthy Meal Planning',
     progress: 91,
-    target: '5 days per week'
+    target: '35 meals',
+    current: '32 meals'
+  },
+  {
+    goal: 'Daily Routines',
+    progress: 76,
+    target: '7 routines',
+    current: '5 routines'
+  },
+  {
+    goal: 'Home Projects',
+    progress: 68,
+    target: '10 projects',
+    current: '7 projects'
   }
 ];
 
 export default function LifestyleScreen() {
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+
+  const handleHapticFeedback = async () => {
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handleChatPress = async () => {
+    await handleHapticFeedback();
+    router.push('/lifestyle-chat');
+  };
   const renderMetricCard = (metric: any, index: number) => {
     const IconComponent = metric.icon;
     
@@ -78,34 +131,51 @@ export default function LifestyleScreen() {
         </View>
         <Text style={styles.metricValue}>{metric.value}</Text>
         <Text style={styles.metricLabel}>{metric.label}</Text>
+        <Text style={styles.metricTrend}>{metric.trend}</Text>
       </View>
     );
   };
 
   const renderProject = (project: any, index: number) => {
-    const progressWidth = (width - 72) * (project.progress / 100);
+    const IconComponent = project.icon;
+    const isSelected = selectedProject === project.title;
     
     return (
-      <View key={index} style={styles.projectCard}>
+      <TouchableOpacity 
+        key={index} 
+        style={[styles.projectCard, isSelected && styles.projectCardSelected]}
+        activeOpacity={0.8}
+        onPress={async () => {
+          await handleHapticFeedback();
+          setSelectedProject(isSelected ? null : project.title);
+        }}
+      >
         <View style={styles.projectHeader}>
+          <View style={[styles.projectIcon, { backgroundColor: project.color + '20' }]}>
+            <IconComponent size={20} color={project.color} />
+          </View>
           <View style={styles.projectInfo}>
             <Text style={styles.projectTitle}>{project.title}</Text>
-            <Text style={styles.projectMeta}>Due in {project.deadline}</Text>
+            <Text style={styles.projectDescription}>{project.description}</Text>
           </View>
-          <Text style={styles.progressPercentage}>{project.progress}%</Text>
+          <View style={styles.projectMeta}>
+            <Text style={styles.progressPercentage}>{project.progress}%</Text>
+            <Text style={styles.projectDeadline}>{project.deadline}</Text>
+          </View>
         </View>
         
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill, 
-                { width: progressWidth, backgroundColor: project.color }
-              ]} 
-            />
-          </View>
+        <View style={styles.progressBar}>
+          <View 
+            style={[
+              styles.progressBarFill, 
+              { 
+                width: `${project.progress}%`,
+                backgroundColor: project.color
+              }
+            ]} 
+          />
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -123,47 +193,57 @@ export default function LifestyleScreen() {
   };
 
   const renderTask = (task: any, index: number) => {
+    const IconComponent = task.icon;
+    
     return (
-      <View key={index} style={[styles.taskCard, task.completed && styles.completedTask]}>
-        <TouchableOpacity style={styles.taskCheckbox}>
-          {task.completed ? (
-            <CheckCircle size={20} color="#27AE60" />
-          ) : (
-            <View style={styles.uncheckedCircle} />
-          )}
-        </TouchableOpacity>
-        
-        <View style={styles.taskContent}>
-          <Text style={[styles.taskTitle, task.completed && styles.completedText]}>
-            {task.task}
-          </Text>
-          <Text style={styles.taskArea}>{task.area}</Text>
+      <TouchableOpacity 
+        key={index} 
+        style={[styles.taskCard, task.completed && styles.completedTask]}
+        activeOpacity={0.8}
+        onPress={handleHapticFeedback}
+      >
+        <View style={[styles.taskIcon, { backgroundColor: task.color + '20' }]}>
+          <IconComponent size={16} color={task.color} />
         </View>
-      </View>
+        <View style={styles.taskContent}>
+          <Text style={styles.taskName}>{task.task}</Text>
+          <Text style={styles.taskDescription}>{task.description}</Text>
+        </View>
+        <View style={styles.taskTime}>
+          <Text style={styles.taskTimeText}>{task.time}</Text>
+          {task.completed && (
+            <View style={styles.completedBadge}>
+              <Text style={styles.completedText}>✓</Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
     );
   };
 
   const renderGoal = (goal: any, index: number) => {
-    const progressWidth = (width - 72) * (goal.progress / 100);
-    
     return (
       <View key={index} style={styles.goalCard}>
         <View style={styles.goalHeader}>
-          <Text style={styles.goalTitle}>{goal.title}</Text>
+          <Text style={styles.goalName}>{goal.goal}</Text>
           <Text style={styles.goalProgress}>{goal.progress}%</Text>
         </View>
-        <Text style={styles.goalTarget}>{goal.target}</Text>
-        
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill, 
-                { width: progressWidth, backgroundColor: '#55A3FF' }
-              ]} 
-            />
-          </View>
+
+        <View style={styles.progressBar}>
+          <View 
+            style={[
+              styles.progressBarFill, 
+              { 
+                width: `${goal.progress}%`,
+                backgroundColor: goal.progress >= 80 ? '#55A3FF' : goal.progress >= 60 ? '#FFD93D' : '#FF6B6B'
+              }
+            ]} 
+          />
         </View>
+
+        <Text style={styles.goalDetail}>
+          {goal.current} / {goal.target}
+        </Text>
       </View>
     );
   };
@@ -197,17 +277,18 @@ export default function LifestyleScreen() {
             
             <TouchableOpacity 
               style={styles.chatButton}
-              onPress={() => router.push('/lifestyle-chat')}
+              onPress={handleChatPress}
+              activeOpacity={0.8}
             >
               <MessageCircle size={20} color="white" />
-              <Text style={styles.chatButtonText}>Get Advice</Text>
+              <Text style={styles.chatButtonText}>Lifestyle Coach</Text>
             </TouchableOpacity>
           </LinearGradient>
         </View>
 
-        {/* Overview */}
+        {/* Lifestyle Metrics */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Overview</Text>
+          <Text style={styles.sectionTitle}>Today&apos;s Metrics</Text>
           <View style={styles.metricsGrid}>
             {lifestyleMetrics.map(renderMetricCard)}
           </View>
@@ -215,13 +296,10 @@ export default function LifestyleScreen() {
 
         {/* Active Projects */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Active Projects</Text>
-            <TouchableOpacity style={styles.addButton}>
-              <Plus size={20} color="#55A3FF" />
-            </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Active Projects</Text>
+          <View style={styles.projectsList}>
+            {activeProjects.map(renderProject)}
           </View>
-          {activeProjects.map(renderProject)}
         </View>
 
         {/* Today's Meals */}
@@ -254,9 +332,9 @@ export default function LifestyleScreen() {
           {todaysTasks.map(renderTask)}
         </View>
 
-        {/* Goals */}
+        {/* This Week's Goals */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Goals</Text>
+          <Text style={styles.sectionTitle}>This Week&apos;s Goals</Text>
           {lifestyleGoals.map(renderGoal)}
         </View>
       </ScrollView>
@@ -307,6 +385,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: '600',
+    marginLeft: 8,
   },
   headerSubtitle: {
     color: 'white',
@@ -381,45 +460,70 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#7F8C8D',
     textAlign: 'center',
+    marginBottom: 4,
+  },
+  metricTrend: {
+    fontSize: 10,
+    color: '#27AE60',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  projectsList: {
+    paddingHorizontal: 24,
   },
   projectCard: {
     backgroundColor: 'white',
-    marginHorizontal: 24,
-    marginBottom: 16,
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
+  projectCardSelected: {
+    borderWidth: 2,
+    borderColor: '#55A3FF',
+  },
   projectHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  projectIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   projectInfo: {
     flex: 1,
   },
   projectTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#2C3E50',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  projectMeta: {
+  projectDescription: {
     fontSize: 12,
     color: '#7F8C8D',
   },
-  progressPercentage: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2C3E50',
+  projectMeta: {
+    alignItems: 'flex-end',
   },
-  progressContainer: {
-    marginBottom: 16,
+  progressPercentage: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#55A3FF',
+    marginBottom: 2,
+  },
+  projectDeadline: {
+    fontSize: 10,
+    color: '#7F8C8D',
   },
   progressBar: {
     height: 6,
@@ -427,7 +531,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     overflow: 'hidden',
   },
-  progressFill: {
+  progressBarFill: {
     height: '100%',
     borderRadius: 3,
   },
@@ -506,12 +610,12 @@ const styles = StyleSheet.create({
   },
   taskCard: {
     backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
     marginHorizontal: 24,
     marginBottom: 12,
     borderRadius: 16,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -520,41 +624,57 @@ const styles = StyleSheet.create({
   },
   completedTask: {
     opacity: 0.7,
+    borderLeftWidth: 4,
+    borderLeftColor: '#27AE60',
   },
-  taskCheckbox: {
-    marginRight: 16,
-  },
-  uncheckedCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#BDC3C7',
+  taskIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   taskContent: {
     flex: 1,
   },
-  taskTitle: {
+  taskName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#2C3E50',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  completedText: {
-    textDecorationLine: 'line-through',
-    color: '#7F8C8D',
-  },
-  taskArea: {
+  taskDescription: {
     fontSize: 12,
     color: '#7F8C8D',
-    marginTop: 2,
+  },
+  taskTime: {
+    alignItems: 'flex-end',
+  },
+  taskTimeText: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginBottom: 4,
+  },
+  completedBadge: {
+    backgroundColor: '#27AE60',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  completedText: {
+    fontSize: 10,
+    color: 'white',
+    fontWeight: 'bold',
   },
   goalCard: {
     backgroundColor: 'white',
     marginHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 12,
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -565,11 +685,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  goalTitle: {
+  goalName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#2C3E50',
   },
   goalProgress: {
@@ -577,10 +697,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#55A3FF',
   },
-  goalTarget: {
-    fontSize: 14,
+  goalDetail: {
+    fontSize: 12,
     color: '#7F8C8D',
-    marginBottom: 16,
+    marginTop: 8,
   },
 
 });
