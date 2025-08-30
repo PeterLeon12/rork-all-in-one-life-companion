@@ -1065,17 +1065,6 @@ export default function HealthScreen() {
           const wasCompleted = goal.completed;
           const newCompleted = !wasCompleted;
           
-          // Add activity for completion immediately
-          if (newCompleted) {
-            const activityData = {
-              ...createActivityImpact.healthActivity(),
-              categoryId: 'health',
-              title: `Completed: ${goal.title}`,
-              impact: { health: goal.importance === 'high' ? 3 : goal.importance === 'medium' ? 2 : 1 }
-            };
-            addActivity(activityData);
-          }
-          
           return {
             ...goal,
             completed: newCompleted,
@@ -1108,6 +1097,20 @@ export default function HealthScreen() {
       
       return updatedGoals;
     });
+    
+    // Add activity after state update to avoid render-time state updates
+    setTimeout(() => {
+      const goal = healthGoals.find(g => g.id === goalId);
+      if (goal && !goal.completed) { // Only add activity when completing (not uncompleting)
+        const activityData = {
+          ...createActivityImpact.healthActivity(),
+          categoryId: 'health',
+          title: `Completed: ${goal.title}`,
+          impact: { health: goal.importance === 'high' ? 3 : goal.importance === 'medium' ? 2 : 1 }
+        };
+        addActivity(activityData);
+      }
+    }, 0);
   };
 
   // Initialize pedometer for real step tracking
