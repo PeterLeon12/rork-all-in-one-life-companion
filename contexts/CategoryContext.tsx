@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
-import { useUser } from './UserContext';
 
 export interface CategoryScore {
   health: number;
@@ -140,14 +139,6 @@ const categoryConnections: Record<string, Partial<CategoryScore>> = {
 export const [CategoryProvider, useCategories] = createContextHook(() => {
   const [scores, setScores] = useState<CategoryScore>(initialScores);
   const [activities, setActivities] = useState<CategoryActivity[]>([]);
-  
-  // Get user context if available (will be undefined during initial render)
-  let userContext: ReturnType<typeof useUser> | null = null;
-  try {
-    userContext = useUser();
-  } catch {
-    // User context not available yet
-  }
 
   const loadData = useCallback(async () => {
     try {
@@ -217,44 +208,7 @@ export const [CategoryProvider, useCategories] = createContextHook(() => {
         });
       }
 
-      // Update user stats and check achievements if user context is available
-      if (userContext) {
-        const { updateStats, checkAndUnlockAchievements, user } = userContext;
-        
-        // Update activity count
-        const newActivityCount = user.stats.totalActivities + 1;
-        
-        // Calculate current streak (simplified - could be more sophisticated)
-        const today = new Date();
-        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-        const yesterdayStart = todayStart - (24 * 60 * 60 * 1000);
-        
-        const todayActivities = activities.filter(a => a.timestamp >= todayStart).length + 1; // +1 for current activity
-        const yesterdayActivities = activities.filter(a => a.timestamp >= yesterdayStart && a.timestamp < todayStart).length;
-        
-        let newStreak = user.stats.currentStreak;
-        if (todayActivities === 1) { // First activity today
-          if (yesterdayActivities > 0) {
-            newStreak += 1; // Continue streak
-          } else {
-            newStreak = 1; // Start new streak
-          }
-        }
-        
-        // Update stats
-        updateStats({
-          totalActivities: newActivityCount,
-          currentStreak: newStreak,
-          longestStreak: Math.max(user.stats.longestStreak, newStreak)
-        });
-        
-        // Check for new achievements
-        const newAchievements = checkAndUnlockAchievements(newActivityCount, newScores, newStreak);
-        
-        if (newAchievements.length > 0) {
-          console.log('New achievements unlocked:', newAchievements.map(a => a.title));
-        }
-      }
+      // Note: User stats integration will be handled at a higher level to avoid circular dependencies
 
       return newScores;
     });
@@ -266,7 +220,7 @@ export const [CategoryProvider, useCategories] = createContextHook(() => {
     });
 
     console.log(`Activity added: ${activity.title} - Impact:`, activity.impact);
-  }, [activities, userContext]);
+  }, []);
 
   const getOverallScore = useCallback((): number => {
     const totalScore = Object.values(scores).reduce((sum, score) => sum + score, 0);
@@ -435,6 +389,34 @@ export const createActivityImpact = {
       lifestyle: 3,
       health: 1,
       energy: 1
+    }
+  }),
+  
+  travelActivity: () => ({
+    type: 'travel',
+    impact: {
+      travel: 3,
+      creativity: 1,
+      learning: 2,
+      confidence: 1
+    }
+  }),
+  
+  communityService: () => ({
+    type: 'community',
+    impact: {
+      community: 3,
+      relationships: 2,
+      confidence: 1
+    }
+  }),
+  
+  energyBoost: () => ({
+    type: 'energy',
+    impact: {
+      energy: 3,
+      health: 1,
+      fitness: 1
     }
   })
 };
