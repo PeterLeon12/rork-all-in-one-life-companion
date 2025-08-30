@@ -21,7 +21,9 @@ import {
   Target,
   Edit3,
   Save,
-  Trash2
+  Trash2,
+  Quote,
+  Sparkles
 } from 'lucide-react-native';
 import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
 
@@ -294,6 +296,59 @@ const getDefaultHealthTips = () => [
   }
 ];
 
+const healthQuotes = [
+  {
+    quote: "Take care of your body. It's the only place you have to live.",
+    author: "Jim Rohn",
+    category: "wellness"
+  },
+  {
+    quote: "Health is not about the weight you lose, but about the life you gain.",
+    author: "Dr. Josh Axe",
+    category: "mindset"
+  },
+  {
+    quote: "The groundwork for all happiness is good health.",
+    author: "Leigh Hunt",
+    category: "happiness"
+  },
+  {
+    quote: "Your body can stand almost anything. It's your mind you have to convince.",
+    author: "Unknown",
+    category: "motivation"
+  },
+  {
+    quote: "A healthy outside starts from the inside.",
+    author: "Robert Urich",
+    category: "holistic"
+  },
+  {
+    quote: "Exercise is a celebration of what your body can do, not a punishment for what you ate.",
+    author: "Unknown",
+    category: "exercise"
+  },
+  {
+    quote: "The first wealth is health.",
+    author: "Ralph Waldo Emerson",
+    category: "wealth"
+  },
+  {
+    quote: "Health is a state of complete harmony of the body, mind and spirit.",
+    author: "B.K.S. Iyengar",
+    category: "balance"
+  },
+  {
+    quote: "To keep the body in good health is a duty... otherwise we shall not be able to keep our mind strong and clear.",
+    author: "Buddha",
+    category: "duty"
+  },
+  {
+    quote: "Every moment is a fresh beginning.",
+    author: "T.S. Eliot",
+    category: "renewal"
+  }
+];
+
 
 
 export default function HealthScreen() {
@@ -315,6 +370,7 @@ export default function HealthScreen() {
   const [goalEditModalVisible, setGoalEditModalVisible] = useState<boolean>(false);
 
   const [personalizedTips, setPersonalizedTips] = useState<any[]>(getDefaultHealthTips());
+  const [currentQuoteIndex, setCurrentQuoteIndex] = useState<number>(0);
 
   const loadHealthData = React.useCallback(async () => {
     try {
@@ -432,6 +488,13 @@ export default function HealthScreen() {
     loadHealthData();
     checkDailyReset();
     loadPersonalizedTips();
+    
+    // Rotate quotes every 10 seconds
+    const quoteInterval = setInterval(() => {
+      setCurrentQuoteIndex(prev => (prev + 1) % healthQuotes.length);
+    }, 10000);
+    
+    return () => clearInterval(quoteInterval);
   }, [loadHealthData, checkDailyReset]);
   
   const loadPersonalizedTips = async () => {
@@ -684,6 +747,22 @@ export default function HealthScreen() {
     
     setHealthGoals(prev => [...prev, newGoal]);
     openGoalEditModal(newGoal);
+  };
+  
+  const getCategoryColor = (category: string): string => {
+    const colors: { [key: string]: string } = {
+      wellness: '#27AE60',
+      mindset: '#6C5CE7',
+      happiness: '#FFD93D',
+      motivation: '#FF6B6B',
+      holistic: '#4ECDC4',
+      exercise: '#E67E22',
+      wealth: '#F39C12',
+      balance: '#9B59B6',
+      duty: '#34495E',
+      renewal: '#1ABC9C'
+    };
+    return colors[category] || '#95A5A6';
   };
   
   const renderMetricCard = (metric: HealthMetric, index: number) => {
@@ -1095,6 +1174,52 @@ export default function HealthScreen() {
         </View>
 
 
+
+        {/* Inspirational Health Quotes */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderSimple}>
+            <Text style={styles.sectionTitle}>Daily Inspiration</Text>
+          </View>
+          <View style={styles.quoteCard}>
+            <View style={styles.quoteHeader}>
+              <View style={styles.quoteIconContainer}>
+                <Quote size={24} color="#6C5CE7" />
+              </View>
+              <View style={styles.quoteIndicator}>
+                <Sparkles size={16} color="#FFD93D" />
+              </View>
+            </View>
+            
+            <Text style={styles.quoteText}>
+              &ldquo;{healthQuotes[currentQuoteIndex].quote}&rdquo;
+            </Text>
+            
+            <View style={styles.quoteFooter}>
+              <Text style={styles.quoteAuthor}>
+                — {healthQuotes[currentQuoteIndex].author}
+              </Text>
+              <View style={[styles.quoteCategoryBadge, { backgroundColor: getCategoryColor(healthQuotes[currentQuoteIndex].category) + '20' }]}>
+                <Text style={[styles.quoteCategoryText, { color: getCategoryColor(healthQuotes[currentQuoteIndex].category) }]}>
+                  {healthQuotes[currentQuoteIndex].category.toUpperCase()}
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.quoteProgress}>
+              <View style={styles.quoteProgressBar}>
+                <View 
+                  style={[
+                    styles.quoteProgressFill,
+                    { width: `${((currentQuoteIndex + 1) / healthQuotes.length) * 100}%` }
+                  ]}
+                />
+              </View>
+              <Text style={styles.quoteProgressText}>
+                {currentQuoteIndex + 1} of {healthQuotes.length}
+              </Text>
+            </View>
+          </View>
+        </View>
 
         {/* Personalized Health Tips */}
         <View style={styles.section}>
@@ -2236,5 +2361,89 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#27AE60',
     textAlign: 'center',
+  },
+  
+  // Quote Card Styles
+  quoteCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    marginHorizontal: 24,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(108, 92, 231, 0.1)',
+  },
+  quoteHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  quoteIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#6C5CE7' + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quoteIndicator: {
+    padding: 8,
+  },
+  quoteText: {
+    fontSize: 18,
+    fontStyle: 'italic',
+    color: '#2C3E50',
+    lineHeight: 26,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: '500',
+  },
+  quoteFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  quoteAuthor: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7F8C8D',
+    fontStyle: 'italic',
+  },
+  quoteCategoryBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  quoteCategoryText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  quoteProgress: {
+    alignItems: 'center',
+  },
+  quoteProgressBar: {
+    width: '100%',
+    height: 4,
+    backgroundColor: '#E9ECEF',
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  quoteProgressFill: {
+    height: '100%',
+    backgroundColor: '#6C5CE7',
+    borderRadius: 2,
+  },
+  quoteProgressText: {
+    fontSize: 12,
+    color: '#95A5A6',
+    fontWeight: '500',
   },
 });
