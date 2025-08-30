@@ -9,7 +9,6 @@ import {
   Calendar,
   Ruler,
   Weight,
-  Target,
   Activity,
   Heart
 } from 'lucide-react-native';
@@ -76,7 +75,20 @@ export default function ProfileSetupScreen() {
     try {
       const saved = await AsyncStorage.getItem('userProfile');
       if (saved) {
-        setProfile(JSON.parse(saved));
+        const parsedProfile = JSON.parse(saved);
+        // Ensure all required properties exist with default values
+        setProfile({
+          name: parsedProfile.name || '',
+          age: parsedProfile.age || 25,
+          height: parsedProfile.height || 170,
+          weight: parsedProfile.weight || 70,
+          gender: parsedProfile.gender || 'male',
+          activityLevel: parsedProfile.activityLevel || 'moderate',
+          fitnessGoals: parsedProfile.fitnessGoals || [],
+          medicalConditions: parsedProfile.medicalConditions || [],
+          preferredWorkoutTime: parsedProfile.preferredWorkoutTime || 'morning',
+          workoutDuration: parsedProfile.workoutDuration || 30
+        });
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -129,6 +141,9 @@ export default function ProfileSetupScreen() {
   };
 
   const calculateBMI = () => {
+    if (!profile.height || !profile.weight || profile.height <= 0 || profile.weight <= 0) {
+      return '0.0';
+    }
     const heightInM = profile.height / 100;
     return (profile.weight / (heightInM * heightInM)).toFixed(1);
   };
@@ -200,8 +215,8 @@ export default function ProfileSetupScreen() {
                     <Text style={styles.inputLabel}>Age</Text>
                     <TextInput
                       style={styles.textInput}
-                      value={profile.age.toString()}
-                      onChangeText={(text) => setProfile(prev => ({ ...prev, age: parseInt(text) || 0 }))}
+                      value={profile.age?.toString() || ''}
+                      onChangeText={(text) => setProfile(prev => ({ ...prev, age: parseInt(text) || 25 }))}
                       placeholder="25"
                       keyboardType="numeric"
                       placeholderTextColor="#BDC3C7"
@@ -239,8 +254,8 @@ export default function ProfileSetupScreen() {
                       <Ruler size={20} color="#7F8C8D" />
                       <TextInput
                         style={styles.textInputWithIcon}
-                        value={profile.height.toString()}
-                        onChangeText={(text) => setProfile(prev => ({ ...prev, height: parseInt(text) || 0 }))}
+                        value={profile.height?.toString() || ''}
+                        onChangeText={(text) => setProfile(prev => ({ ...prev, height: parseInt(text) || 170 }))}
                         placeholder="170"
                         keyboardType="numeric"
                         placeholderTextColor="#BDC3C7"
@@ -254,8 +269,8 @@ export default function ProfileSetupScreen() {
                       <Weight size={20} color="#7F8C8D" />
                       <TextInput
                         style={styles.textInputWithIcon}
-                        value={profile.weight.toString()}
-                        onChangeText={(text) => setProfile(prev => ({ ...prev, weight: parseInt(text) || 0 }))}
+                        value={profile.weight?.toString() || ''}
+                        onChangeText={(text) => setProfile(prev => ({ ...prev, weight: parseInt(text) || 70 }))}
                         placeholder="70"
                         keyboardType="numeric"
                         placeholderTextColor="#BDC3C7"
