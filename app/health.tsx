@@ -297,54 +297,575 @@ const getDefaultHealthTips = () => [
 ];
 
 const healthQuotes = [
+  // Wellness & General Health
   {
     quote: "Take care of your body. It's the only place you have to live.",
     author: "Jim Rohn",
     category: "wellness"
   },
   {
+    quote: "The first wealth is health.",
+    author: "Ralph Waldo Emerson",
+    category: "wellness"
+  },
+  {
+    quote: "Health is a state of complete harmony of the body, mind and spirit.",
+    author: "B.K.S. Iyengar",
+    category: "wellness"
+  },
+  {
+    quote: "To keep the body in good health is a duty... otherwise we shall not be able to keep our mind strong and clear.",
+    author: "Buddha",
+    category: "wellness"
+  },
+  {
+    quote: "A healthy outside starts from the inside.",
+    author: "Robert Urich",
+    category: "wellness"
+  },
+  {
+    quote: "Health is not valued till sickness comes.",
+    author: "Thomas Fuller",
+    category: "wellness"
+  },
+  {
+    quote: "The greatest revolution of our generation is the discovery that human beings can alter their lives by altering their attitudes.",
+    author: "William James",
+    category: "wellness"
+  },
+  {
+    quote: "Your body hears everything your mind says. Stay positive.",
+    author: "Unknown",
+    category: "wellness"
+  },
+  {
+    quote: "Health is not about being perfect with food or exercise. Health is about balancing those things with your goals.",
+    author: "Emily Maroutian",
+    category: "wellness"
+  },
+  {
+    quote: "Healing is a matter of time, but it is sometimes also a matter of opportunity.",
+    author: "Hippocrates",
+    category: "wellness"
+  },
+
+  // Mindset & Mental Health
+  {
     quote: "Health is not about the weight you lose, but about the life you gain.",
     author: "Dr. Josh Axe",
     category: "mindset"
   },
   {
-    quote: "The groundwork for all happiness is good health.",
-    author: "Leigh Hunt",
-    category: "happiness"
-  },
-  {
     quote: "Your body can stand almost anything. It's your mind you have to convince.",
     author: "Unknown",
-    category: "motivation"
+    category: "mindset"
   },
   {
-    quote: "A healthy outside starts from the inside.",
-    author: "Robert Urich",
-    category: "holistic"
+    quote: "The mind is everything. What you think you become.",
+    author: "Buddha",
+    category: "mindset"
   },
+  {
+    quote: "Positive anything is better than negative nothing.",
+    author: "Elbert Hubbard",
+    category: "mindset"
+  },
+  {
+    quote: "You are what you think. So just think big, believe big, act big, work big, give big, forgive big, laugh big, love big and live big.",
+    author: "Andrew Carnegie",
+    category: "mindset"
+  },
+  {
+    quote: "The greatest weapon against stress is our ability to choose one thought over another.",
+    author: "William James",
+    category: "mindset"
+  },
+  {
+    quote: "Mental health is not a destination, but a process. It's about how you drive, not where you're going.",
+    author: "Noam Shpancer",
+    category: "mindset"
+  },
+  {
+    quote: "You don't have to be positive all the time. It's perfectly okay to feel sad, angry, annoyed, frustrated, scared and anxious. Having feelings doesn't make you a negative person.",
+    author: "Lori Deschene",
+    category: "mindset"
+  },
+  {
+    quote: "Self-care is not selfish. You cannot serve from an empty vessel.",
+    author: "Eleanor Brown",
+    category: "mindset"
+  },
+  {
+    quote: "The curious paradox is that when I accept myself just as I am, then I can change.",
+    author: "Carl Rogers",
+    category: "mindset"
+  },
+
+  // Exercise & Movement
   {
     quote: "Exercise is a celebration of what your body can do, not a punishment for what you ate.",
     author: "Unknown",
     category: "exercise"
   },
   {
-    quote: "The first wealth is health.",
-    author: "Ralph Waldo Emerson",
-    category: "wealth"
+    quote: "The only bad workout is the one that didn't happen.",
+    author: "Unknown",
+    category: "exercise"
   },
   {
-    quote: "Health is a state of complete harmony of the body, mind and spirit.",
-    author: "B.K.S. Iyengar",
-    category: "balance"
+    quote: "Movement is medicine for creating change in a person's physical, emotional, and mental states.",
+    author: "Carol Welch",
+    category: "exercise"
   },
   {
-    quote: "To keep the body in good health is a duty... otherwise we shall not be able to keep our mind strong and clear.",
-    author: "Buddha",
-    category: "duty"
+    quote: "Strength doesn't come from what you can do. It comes from overcoming the things you once thought you couldn't.",
+    author: "Rikki Rogers",
+    category: "exercise"
   },
+  {
+    quote: "Exercise should be regarded as tribute to the heart.",
+    author: "Gene Tunney",
+    category: "exercise"
+  },
+  {
+    quote: "Physical fitness is not only one of the most important keys to a healthy body, it is the basis of dynamic and creative intellectual activity.",
+    author: "John F. Kennedy",
+    category: "exercise"
+  },
+  {
+    quote: "A man's health can be judged by which he takes two at a time - pills or stairs.",
+    author: "Joan Welsh",
+    category: "exercise"
+  },
+  {
+    quote: "Those who think they have not time for bodily exercise will sooner or later have to find time for illness.",
+    author: "Edward Stanley",
+    category: "exercise"
+  },
+  {
+    quote: "Take care of your body. It's the only place you have to live.",
+    author: "Jim Rohn",
+    category: "exercise"
+  },
+  {
+    quote: "Exercise is king. Nutrition is queen. Put them together and you've got a kingdom.",
+    author: "Jack LaLanne",
+    category: "exercise"
+  },
+
+  // Nutrition & Food
+  {
+    quote: "Let food be thy medicine and medicine be thy food.",
+    author: "Hippocrates",
+    category: "nutrition"
+  },
+  {
+    quote: "You are what you eat, so don't be fast, cheap, easy, or fake.",
+    author: "Unknown",
+    category: "nutrition"
+  },
+  {
+    quote: "Every time you eat or drink, you are either feeding disease or fighting it.",
+    author: "Heather Morgan",
+    category: "nutrition"
+  },
+  {
+    quote: "The food you eat can be either the safest and most powerful form of medicine or the slowest form of poison.",
+    author: "Ann Wigmore",
+    category: "nutrition"
+  },
+  {
+    quote: "Don't eat anything your great-grandmother wouldn't recognize as food.",
+    author: "Michael Pollan",
+    category: "nutrition"
+  },
+  {
+    quote: "Eat breakfast like a king, lunch like a prince, and dinner like a pauper.",
+    author: "Adelle Davis",
+    category: "nutrition"
+  },
+  {
+    quote: "The groundwork for all happiness is good health.",
+    author: "Leigh Hunt",
+    category: "nutrition"
+  },
+  {
+    quote: "Your diet is a bank account. Good food choices are good investments.",
+    author: "Bethenny Frankel",
+    category: "nutrition"
+  },
+  {
+    quote: "Eating well is a form of self-respect.",
+    author: "Unknown",
+    category: "nutrition"
+  },
+  {
+    quote: "The doctor of the future will give no medicine, but will interest his patients in the care of the human frame, in diet, and in the cause and prevention of disease.",
+    author: "Thomas Edison",
+    category: "nutrition"
+  },
+
+  // Sleep & Rest
+  {
+    quote: "Sleep is the best meditation.",
+    author: "Dalai Lama",
+    category: "sleep"
+  },
+  {
+    quote: "A good laugh and a long sleep are the best cures in the doctor's book.",
+    author: "Irish Proverb",
+    category: "sleep"
+  },
+  {
+    quote: "Sleep is that golden chain that ties health and our bodies together.",
+    author: "Thomas Dekker",
+    category: "sleep"
+  },
+  {
+    quote: "The best bridge between despair and hope is a good night's sleep.",
+    author: "E. Joseph Cossman",
+    category: "sleep"
+  },
+  {
+    quote: "Rest when you're weary. Refresh and renew yourself, your body, your mind, your spirit.",
+    author: "Ralph Marston",
+    category: "sleep"
+  },
+  {
+    quote: "Sleep is the cousin of death, but also the cousin of life.",
+    author: "Unknown",
+    category: "sleep"
+  },
+  {
+    quote: "Without enough sleep, we all become tall two-year-olds.",
+    author: "JoJo Jensen",
+    category: "sleep"
+  },
+  {
+    quote: "Your future depends on your dreams, so go to sleep.",
+    author: "Mesut Barazany",
+    category: "sleep"
+  },
+  {
+    quote: "Sleep is an investment in the energy you need to be effective tomorrow.",
+    author: "Tom Roth",
+    category: "sleep"
+  },
+  {
+    quote: "Early to bed and early to rise makes a man healthy, wealthy, and wise.",
+    author: "Benjamin Franklin",
+    category: "sleep"
+  },
+
+  // Motivation & Inspiration
   {
     quote: "Every moment is a fresh beginning.",
     author: "T.S. Eliot",
+    category: "motivation"
+  },
+  {
+    quote: "The journey of a thousand miles begins with one step.",
+    author: "Lao Tzu",
+    category: "motivation"
+  },
+  {
+    quote: "Success is the sum of small efforts repeated day in and day out.",
+    author: "Robert Collier",
+    category: "motivation"
+  },
+  {
+    quote: "Don't put off tomorrow what you can do today.",
+    author: "Benjamin Franklin",
+    category: "motivation"
+  },
+  {
+    quote: "The only impossible journey is the one you never begin.",
+    author: "Tony Robbins",
+    category: "motivation"
+  },
+  {
+    quote: "You don't have to be great to get started, but you have to get started to be great.",
+    author: "Les Brown",
+    category: "motivation"
+  },
+  {
+    quote: "Progress, not perfection.",
+    author: "Unknown",
+    category: "motivation"
+  },
+  {
+    quote: "Small steps every day lead to big changes over time.",
+    author: "Unknown",
+    category: "motivation"
+  },
+  {
+    quote: "The best time to plant a tree was 20 years ago. The second best time is now.",
+    author: "Chinese Proverb",
+    category: "motivation"
+  },
+  {
+    quote: "You are never too old to set another goal or to dream a new dream.",
+    author: "C.S. Lewis",
+    category: "motivation"
+  },
+
+  // Balance & Harmony
+  {
+    quote: "Balance is not something you find, it's something you create.",
+    author: "Jana Kingsford",
+    category: "balance"
+  },
+  {
+    quote: "Life is like riding a bicycle. To keep your balance, you must keep moving.",
+    author: "Albert Einstein",
+    category: "balance"
+  },
+  {
+    quote: "Wellness is the complete integration of body, mind, and spirit.",
+    author: "Greg Anderson",
+    category: "balance"
+  },
+  {
+    quote: "The key to keeping your balance is knowing when you've lost it.",
+    author: "Anonymous",
+    category: "balance"
+  },
+  {
+    quote: "Happiness is not a matter of intensity but of balance, order, rhythm and harmony.",
+    author: "Thomas Merton",
+    category: "balance"
+  },
+  {
+    quote: "Work, love and play are the great balance wheels of man's being.",
+    author: "Orison Swett Marden",
+    category: "balance"
+  },
+  {
+    quote: "Balance is not better time management, but better boundary management.",
+    author: "Betsy Jacobson",
+    category: "balance"
+  },
+  {
+    quote: "In all aspects of life, balance is key. Too much of anything isn't healthy.",
+    author: "Unknown",
+    category: "balance"
+  },
+  {
+    quote: "Life is a balance between holding on and letting go.",
+    author: "Rumi",
+    category: "balance"
+  },
+  {
+    quote: "The best and safest thing is to keep a balance in your life.",
+    author: "Euripides",
+    category: "balance"
+  },
+
+  // Stress & Mental Wellness
+  {
+    quote: "Stress is caused by being 'here' but wanting to be 'there'.",
+    author: "Eckhart Tolle",
+    category: "stress"
+  },
+  {
+    quote: "You have power over your mind - not outside events. Realize this, and you will find strength.",
+    author: "Marcus Aurelius",
+    category: "stress"
+  },
+  {
+    quote: "Don't let yesterday take up too much of today.",
+    author: "Will Rogers",
+    category: "stress"
+  },
+  {
+    quote: "Breathe in peace, breathe out stress.",
+    author: "Unknown",
+    category: "stress"
+  },
+  {
+    quote: "The time to relax is when you don't have time for it.",
+    author: "Sydney J. Harris",
+    category: "stress"
+  },
+  {
+    quote: "Stress is an ignorant state. It believes that everything is an emergency.",
+    author: "Natalie Goldberg",
+    category: "stress"
+  },
+  {
+    quote: "Take time to make your soul happy.",
+    author: "Unknown",
+    category: "stress"
+  },
+  {
+    quote: "Sometimes the most productive thing you can do is relax.",
+    author: "Mark Black",
+    category: "stress"
+  },
+  {
+    quote: "Calm mind brings inner strength and self-confidence.",
+    author: "Dalai Lama",
+    category: "stress"
+  },
+  {
+    quote: "Peace comes from within. Do not seek it without.",
+    author: "Buddha",
+    category: "stress"
+  },
+
+  // Hydration & Water
+  {
+    quote: "Water is life, and clean water means health.",
+    author: "Audrey Hepburn",
+    category: "hydration"
+  },
+  {
+    quote: "Thousands have lived without love, not one without water.",
+    author: "W.H. Auden",
+    category: "hydration"
+  },
+  {
+    quote: "Water is the driving force of all nature.",
+    author: "Leonardo da Vinci",
+    category: "hydration"
+  },
+  {
+    quote: "Pure water is the world's first and foremost medicine.",
+    author: "Slovakian Proverb",
+    category: "hydration"
+  },
+  {
+    quote: "Water is the most neglected nutrient in your diet but one of the most vital.",
+    author: "Julia Child",
+    category: "hydration"
+  },
+  {
+    quote: "Drink water like your life depends on it. Because it does.",
+    author: "Unknown",
+    category: "hydration"
+  },
+  {
+    quote: "The cure for anything is salt water: sweat, tears or the sea.",
+    author: "Isak Dinesen",
+    category: "hydration"
+  },
+  {
+    quote: "Water is the only drink for a wise man.",
+    author: "Henry David Thoreau",
+    category: "hydration"
+  },
+  {
+    quote: "When the well is dry, we know the worth of water.",
+    author: "Benjamin Franklin",
+    category: "hydration"
+  },
+  {
+    quote: "Water is fluid, soft, and yielding. But water will wear away rock, which cannot yield.",
+    author: "Lao Tzu",
+    category: "hydration"
+  },
+
+  // Happiness & Joy
+  {
+    quote: "Happiness is the highest form of health.",
+    author: "Dalai Lama",
+    category: "happiness"
+  },
+  {
+    quote: "The secret of health for both mind and body is not to mourn for the past, nor to worry about the future, but to live the present moment wisely and earnestly.",
+    author: "Buddha",
+    category: "happiness"
+  },
+  {
+    quote: "Laughter is timeless, imagination has no age, and dreams are forever.",
+    author: "Walt Disney",
+    category: "happiness"
+  },
+  {
+    quote: "A cheerful heart is good medicine.",
+    author: "Proverbs 17:22",
+    category: "happiness"
+  },
+  {
+    quote: "Joy is the simplest form of gratitude.",
+    author: "Karl Barth",
+    category: "happiness"
+  },
+  {
+    quote: "Happiness is not something ready made. It comes from your own actions.",
+    author: "Dalai Lama",
+    category: "happiness"
+  },
+  {
+    quote: "The most wasted of days is one without laughter.",
+    author: "E.E. Cummings",
+    category: "happiness"
+  },
+  {
+    quote: "Smile, it is the key that fits the lock of everybody's heart.",
+    author: "Anthony J. D'Angelo",
+    category: "happiness"
+  },
+  {
+    quote: "Happiness is when what you think, what you say, and what you do are in harmony.",
+    author: "Mahatma Gandhi",
+    category: "happiness"
+  },
+  {
+    quote: "The purpose of our lives is to be happy.",
+    author: "Dalai Lama",
+    category: "happiness"
+  },
+
+  // Renewal & Fresh Starts
+  {
+    quote: "Today is the first day of the rest of your life.",
+    author: "Abbie Hoffman",
+    category: "renewal"
+  },
+  {
+    quote: "What we plant in the soil of contemplation, we shall reap in the harvest of action.",
+    author: "Meister Eckhart",
+    category: "renewal"
+  },
+  {
+    quote: "Every sunrise is an invitation for us to arise and brighten someone's day.",
+    author: "Richelle E. Goodrich",
+    category: "renewal"
+  },
+  {
+    quote: "You are never too old to reinvent yourself.",
+    author: "Steve Harvey",
+    category: "renewal"
+  },
+  {
+    quote: "The secret of change is to focus all of your energy not on fighting the old, but on building the new.",
+    author: "Socrates",
+    category: "renewal"
+  },
+  {
+    quote: "New beginnings are often disguised as painful endings.",
+    author: "Lao Tzu",
+    category: "renewal"
+  },
+  {
+    quote: "Every day is a new beginning. Take a deep breath, smile and start again.",
+    author: "Unknown",
+    category: "renewal"
+  },
+  {
+    quote: "It's never too late to be what you might have been.",
+    author: "George Eliot",
+    category: "renewal"
+  },
+  {
+    quote: "The first step towards getting somewhere is to decide you're not going to stay where you are.",
+    author: "J.P. Morgan",
+    category: "renewal"
+  },
+  {
+    quote: "Change is the end result of all true learning.",
+    author: "Leo Buscaglia",
     category: "renewal"
   }
 ];
@@ -489,10 +1010,10 @@ export default function HealthScreen() {
     checkDailyReset();
     loadPersonalizedTips();
     
-    // Rotate quotes every 10 seconds
+    // Rotate quotes every 15 seconds for better reading time
     const quoteInterval = setInterval(() => {
       setCurrentQuoteIndex(prev => (prev + 1) % healthQuotes.length);
-    }, 10000);
+    }, 15000);
     
     return () => clearInterval(quoteInterval);
   }, [loadHealthData, checkDailyReset]);
@@ -755,11 +1276,12 @@ export default function HealthScreen() {
       mindset: '#6C5CE7',
       happiness: '#FFD93D',
       motivation: '#FF6B6B',
-      holistic: '#4ECDC4',
       exercise: '#E67E22',
-      wealth: '#F39C12',
+      nutrition: '#27AE60',
+      sleep: '#6C5CE7',
       balance: '#9B59B6',
-      duty: '#34495E',
+      stress: '#E74C3C',
+      hydration: '#4ECDC4',
       renewal: '#1ABC9C'
     };
     return colors[category] || '#95A5A6';
