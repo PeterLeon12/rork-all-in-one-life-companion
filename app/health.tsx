@@ -366,7 +366,7 @@ export default function HealthScreen() {
       >
         <View style={styles.metricHeader}>
           <View style={[styles.metricIcon, { backgroundColor: metric.color + '20' }]}>
-            <IconComponent size={20} color={metric.color} />
+            {React.createElement(IconComponent, { size: 20, color: metric.color })}
             {isCompleted && (
               <View style={styles.completedBadge}>
                 <CheckCircle size={12} color="#27AE60" />
@@ -418,7 +418,7 @@ export default function HealthScreen() {
         onPress={() => handleQuickAction(action)}
       >
         <View style={[styles.quickActionIcon, { backgroundColor: action.color }]}>
-          <IconComponent size={20} color="white" />
+          {React.createElement(IconComponent, { size: 20, color: 'white' })}
         </View>
         <Text style={styles.quickActionTitle}>{action.title}</Text>
       </TouchableOpacity>
@@ -582,7 +582,7 @@ export default function HealthScreen() {
               return (
                 <View key={index} style={styles.tipCard}>
                   <View style={[styles.tipIcon, { backgroundColor: tip.color + '20' }]}>
-                    <IconComponent size={24} color={tip.color} />
+                    {React.createElement(IconComponent, { size: 24, color: tip.color })}
                   </View>
                   <Text style={styles.tipTitle}>{tip.title}</Text>
                   <Text style={styles.tipDescription}>{tip.description}</Text>
@@ -624,7 +624,7 @@ export default function HealthScreen() {
                   <View style={[styles.modalIcon, { backgroundColor: selectedMetric.color + '20' }]}>
                     {(() => {
                       const IconComponent = selectedMetric.icon;
-                      return <IconComponent size={32} color={selectedMetric.color} />;
+                      return React.createElement(IconComponent, { size: 32, color: selectedMetric.color });
                     })()}
                   </View>
                   
