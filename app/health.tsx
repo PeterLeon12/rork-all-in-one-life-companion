@@ -1013,9 +1013,21 @@ export default function HealthScreen() {
   
   // Separate effect for quote rotation to avoid multiple intervals
   useEffect(() => {
-    // Show random quotes every 10 seconds for optimal reading time
+    let usedQuoteIndices: number[] = [];
+    
+    // Show random quotes every 15 seconds for optimal reading time
     const getRandomQuote = () => {
-      const randomIndex = Math.floor(Math.random() * healthQuotes.length);
+      // Reset used indices if we've used all quotes
+      if (usedQuoteIndices.length >= healthQuotes.length) {
+        usedQuoteIndices = [];
+      }
+      
+      let randomIndex;
+      do {
+        randomIndex = Math.floor(Math.random() * healthQuotes.length);
+      } while (usedQuoteIndices.includes(randomIndex) && usedQuoteIndices.length < healthQuotes.length);
+      
+      usedQuoteIndices.push(randomIndex);
       return healthQuotes[randomIndex];
     };
     
@@ -1024,7 +1036,7 @@ export default function HealthScreen() {
     
     const quoteInterval = setInterval(() => {
       setCurrentQuote(getRandomQuote());
-    }, 10000); // 10 seconds per quote
+    }, 15000); // 15 seconds per quote for better reading experience
     
     return () => clearInterval(quoteInterval);
   }, []); // Empty dependency array to run only once
@@ -1034,52 +1046,22 @@ export default function HealthScreen() {
     setPersonalizedTips(tips);
   };
 
-  // Save data whenever goals or metrics change (debounced)
+  // Save data whenever goals or metrics change (debounced and optimized)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       saveHealthData();
-    }, 500); // Debounce saves by 500ms
+    }, 1000); // Increased debounce to 1 second to reduce save frequency
     
     return () => clearTimeout(timeoutId);
   }, [healthGoals, healthMetrics, dailyStreak, lastResetDate, completedGoalsToday, totalGoalsCompleted]);
   
-  // Toggle goal completion (optimized to batch state updates)
+  // Toggle goal completion (optimized to prevent flickering)
   const toggleGoalCompletion = (goalId: string) => {
     setHealthGoals(prev => {
       const updatedGoals = prev.map(goal => {
         if (goal.id === goalId) {
           const wasCompleted = goal.completed;
           const newCompleted = !wasCompleted;
-          
-          // Batch counter updates to avoid multiple re-renders
-          if (newCompleted && !wasCompleted) {
-            setCompletedGoalsToday(current => current + 1);
-            setTotalGoalsCompleted(current => current + 1);
-          } else if (!newCompleted && wasCompleted) {
-            setCompletedGoalsToday(current => Math.max(0, current - 1));
-            setTotalGoalsCompleted(current => Math.max(0, current - 1));
-          }
-          
-          // Add activity for completion
-          if (newCompleted) {
-            // Use setTimeout to avoid blocking the UI update
-            setTimeout(() => {
-              const activityData = {
-                ...createActivityImpact.healthActivity(),
-                categoryId: 'health',
-                title: `Completed: ${goal.title}`,
-                impact: { health: goal.importance === 'high' ? 3 : goal.importance === 'medium' ? 2 : 1 }
-              };
-              addActivity(activityData);
-              
-              // Show encouraging message
-              Alert.alert(
-                '🎉 Goal Completed!',
-                `Great job completing "${goal.title}"! Every small step counts towards a healthier you.`,
-                [{ text: 'Keep Going!', style: 'default' }]
-              );
-            }, 100);
-          }
           
           return {
             ...goal,
@@ -1091,6 +1073,41 @@ export default function HealthScreen() {
         return goal;
       });
       
+      // Calculate counters from the updated goals to avoid multiple state updates
+      const newCompletedCount = updatedGoals.filter(goal => goal.completed).length;
+      const currentCompletedCount = prev.filter(goal => goal.completed).length;
+      const difference = newCompletedCount - currentCompletedCount;
+      
+      // Update counters in a single batch
+      if (difference !== 0) {
+        setCompletedGoalsToday(current => Math.max(0, current + difference));
+        setTotalGoalsCompleted(current => Math.max(0, current + difference));
+        
+        // Add activity for completion (only when completing, not uncompleting)
+        if (difference > 0) {
+          const completedGoal = updatedGoals.find(goal => goal.id === goalId);
+          if (completedGoal) {
+            // Use setTimeout to avoid blocking the UI update
+            setTimeout(() => {
+              const activityData = {
+                ...createActivityImpact.healthActivity(),
+                categoryId: 'health',
+                title: `Completed: ${completedGoal.title}`,
+                impact: { health: completedGoal.importance === 'high' ? 3 : completedGoal.importance === 'medium' ? 2 : 1 }
+              };
+              addActivity(activityData);
+              
+              // Show encouraging message
+              Alert.alert(
+                '🎉 Goal Completed!',
+                `Great job completing "${completedGoal.title}"! Every small step counts towards a healthier you.`,
+                [{ text: 'Keep Going!', style: 'default' }]
+              );
+            }, 100);
+          }
+        }
+      }
+      
       return updatedGoals;
     });
   };
@@ -1101,17 +1118,19 @@ export default function HealthScreen() {
     
     if (Platform.OS === 'web') {
       console.log('Pedometer not available on web, using simulated steps');
-      // Fallback to simulated steps for web (less frequent updates to reduce flickering)
+      // Fallback to simulated steps for web (very infrequent updates to prevent flickering)
       const updateSteps = () => {
-        setHealthMetrics(prev => prev.map(metric => {
-          if (metric.id === 'steps') {
-            const increment = Math.floor(Math.random() * 50) + 10;
-            return { ...metric, value: Math.min(metric.target, metric.value + increment) };
-          }
-          return metric;
-        }));
+        requestAnimationFrame(() => {
+          setHealthMetrics(prev => prev.map(metric => {
+            if (metric.id === 'steps') {
+              const increment = Math.floor(Math.random() * 50) + 10;
+              return { ...metric, value: Math.min(metric.target, metric.value + increment) };
+            }
+            return metric;
+          }));
+        });
       };
-      const interval = setInterval(updateSteps, 60000); // Reduced frequency from 30s to 60s
+      const interval = setInterval(updateSteps, 120000); // Reduced frequency to 2 minutes
       return () => clearInterval(interval);
     }
     
@@ -1144,23 +1163,26 @@ export default function HealthScreen() {
           console.error('Error getting past step count:', error);
         }
         
-        // Subscribe to real-time step updates (throttled to reduce flickering)
+        // Subscribe to real-time step updates (heavily throttled to prevent flickering)
         let lastUpdateTime = 0;
         const subscription = Pedometer.watchStepCount(result => {
           const now = Date.now();
-          // Throttle updates to once every 5 seconds to reduce flickering
-          if (now - lastUpdateTime < 5000) return;
+          // Throttle updates to once every 10 seconds to prevent flickering during goal interactions
+          if (now - lastUpdateTime < 10000) return;
           lastUpdateTime = now;
           
           console.log('Step count update:', result.steps);
           const totalSteps = pastStepCount + result.steps;
           
-          setHealthMetrics(prev => prev.map(metric => {
-            if (metric.id === 'steps') {
-              return { ...metric, value: totalSteps };
-            }
-            return metric;
-          }));
+          // Use requestAnimationFrame to ensure smooth UI updates
+          requestAnimationFrame(() => {
+            setHealthMetrics(prev => prev.map(metric => {
+              if (metric.id === 'steps') {
+                return { ...metric, value: totalSteps };
+              }
+              return metric;
+            }));
+          });
         });
         
         return () => {
@@ -1169,8 +1191,28 @@ export default function HealthScreen() {
         };
       } else {
         console.log('Pedometer not available, using simulated steps');
-        // Fallback to simulated steps (reduced frequency)
+        // Fallback to simulated steps (very reduced frequency)
         const updateSteps = () => {
+          requestAnimationFrame(() => {
+            setHealthMetrics(prev => prev.map(metric => {
+              if (metric.id === 'steps') {
+                const increment = Math.floor(Math.random() * 50) + 10;
+                return { ...metric, value: Math.min(metric.target, metric.value + increment) };
+              }
+              return metric;
+            }));
+          });
+        };
+        const interval = setInterval(updateSteps, 120000); // Very reduced frequency
+        return () => clearInterval(interval);
+      }
+    } catch (error) {
+      console.error('Error initializing pedometer:', error);
+      setIsPedometerAvailable(false);
+      
+      // Fallback to simulated steps (very reduced frequency)
+      const updateSteps = () => {
+        requestAnimationFrame(() => {
           setHealthMetrics(prev => prev.map(metric => {
             if (metric.id === 'steps') {
               const increment = Math.floor(Math.random() * 50) + 10;
@@ -1178,25 +1220,9 @@ export default function HealthScreen() {
             }
             return metric;
           }));
-        };
-        const interval = setInterval(updateSteps, 60000); // Reduced frequency
-        return () => clearInterval(interval);
-      }
-    } catch (error) {
-      console.error('Error initializing pedometer:', error);
-      setIsPedometerAvailable(false);
-      
-      // Fallback to simulated steps (reduced frequency)
-      const updateSteps = () => {
-        setHealthMetrics(prev => prev.map(metric => {
-          if (metric.id === 'steps') {
-            const increment = Math.floor(Math.random() * 50) + 10;
-            return { ...metric, value: Math.min(metric.target, metric.value + increment) };
-          }
-          return metric;
-        }));
+        });
       };
-      const interval = setInterval(updateSteps, 60000); // Reduced frequency
+      const interval = setInterval(updateSteps, 120000); // Very reduced frequency
       return () => clearInterval(interval);
     }
   }, [pastStepCount]);
@@ -1323,7 +1349,7 @@ export default function HealthScreen() {
     
     return (
       <TouchableOpacity 
-        key={`${metric.id}-${index}`} 
+        key={`${metric.id}-${metric.value}-${index}`} 
         style={[
           styles.metricCard,
           isCompleted && styles.metricCardCompleted
