@@ -20,7 +20,7 @@ import {
   TrendingUp,
   Calendar
 } from 'lucide-react-native';
-import { useCategories, useCategoryData, createActivityImpact } from '../contexts/CategoryContext';
+import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
 
 const { width } = Dimensions.get('window');
 
