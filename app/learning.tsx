@@ -1,7 +1,6 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Stack } from 'expo-router';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Alert } from 'react-native';
+import { Stack, router } from 'expo-router';
 import { 
   BookOpen, 
   Play, 
@@ -11,23 +10,37 @@ import {
   TrendingUp,
   Star,
   CheckCircle,
-  Plus,
-  Bookmark,
-  Users,
+  MessageCircle,
+  Pause,
   Brain
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
 const learningMetrics = [
-  { label: 'Courses Completed', value: '12', icon: Award, color: '#6C5CE7', change: '+3 this month' },
-  { label: 'Study Hours', value: '47h', icon: Clock, color: '#4ECDC4', change: 'This month' },
-  { label: 'Skills Acquired', value: '8', icon: Brain, color: '#FFD93D', change: 'New skills' },
-  { label: 'Certificates', value: '5', icon: Star, color: '#FF6B6B', change: 'Earned' }
+  { label: 'Study Streak', value: '12', icon: Target, color: '#6C5CE7', change: 'days' },
+  { label: 'This Week', value: '8.5h', icon: Clock, color: '#4ECDC4', change: 'hours' },
+  { label: 'Completed', value: '3', icon: CheckCircle, color: '#27AE60', change: 'courses' },
+  { label: 'Level', value: '8', icon: Award, color: '#FF6B6B', change: 'progress' }
+];
+
+const todaysFocus = {
+  subject: 'JavaScript Fundamentals',
+  timeSpent: 45,
+  targetTime: 60,
+  streak: 12,
+  nextMilestone: 'Complete Module 5'
+};
+
+const quickActions = [
+  { id: 1, title: 'Continue JavaScript', time: '30 min left', color: '#6C5CE7', icon: Play },
+  { id: 2, title: 'Review Design Notes', time: '15 min', color: '#FFD93D', icon: BookOpen },
+  { id: 3, title: 'Practice Quiz', time: '10 min', color: '#4ECDC4', icon: Brain }
 ];
 
 const activeCourses = [
   {
+    id: 1,
     title: 'Advanced JavaScript',
     provider: 'TechAcademy',
     progress: 78,
@@ -35,19 +48,12 @@ const activeCourses = [
     completedLessons: 19,
     timeLeft: '2h 15m',
     color: '#6C5CE7',
-    category: 'Programming'
+    category: 'Programming',
+    isActive: false,
+    nextLesson: 'Async/Await Patterns'
   },
   {
-    title: 'Digital Marketing Mastery',
-    provider: 'MarketPro',
-    progress: 45,
-    totalLessons: 18,
-    completedLessons: 8,
-    timeLeft: '4h 30m',
-    color: '#4ECDC4',
-    category: 'Marketing'
-  },
-  {
+    id: 2,
     title: 'UI/UX Design Principles',
     provider: 'DesignHub',
     progress: 92,
@@ -55,62 +61,41 @@ const activeCourses = [
     completedLessons: 14,
     timeLeft: '30m',
     color: '#FFD93D',
-    category: 'Design'
-  }
-];
-
-const recommendedCourses = [
-  {
-    title: 'Machine Learning Basics',
-    provider: 'AI Institute',
-    rating: 4.8,
-    students: '12.5k',
-    duration: '6 weeks',
-    price: 'Free',
-    color: '#FF6B6B'
-  },
-  {
-    title: 'Public Speaking Mastery',
-    provider: 'SpeakWell',
-    rating: 4.9,
-    students: '8.2k',
-    duration: '4 weeks',
-    price: '$49',
-    color: '#4ECDC4'
-  },
-  {
-    title: 'Financial Planning 101',
-    provider: 'MoneyWise',
-    rating: 4.7,
-    students: '15.3k',
-    duration: '8 weeks',
-    price: '$29',
-    color: '#6C5CE7'
-  }
-];
-
-const learningGoals = [
-  {
-    title: 'Complete JavaScript Course',
-    deadline: '2 days left',
-    progress: 78,
-    priority: 'high'
-  },
-  {
-    title: 'Earn UX Design Certificate',
-    deadline: '1 week left',
-    progress: 92,
-    priority: 'medium'
-  },
-  {
-    title: 'Learn Python Basics',
-    deadline: '2 weeks left',
-    progress: 0,
-    priority: 'low'
+    category: 'Design',
+    isActive: false,
+    nextLesson: 'Final Project Review'
   }
 ];
 
 export default function LearningScreen() {
+  const [activeStudySession, setActiveStudySession] = useState<number | null>(null);
+  const [courses, setCourses] = useState(activeCourses);
+
+  const handleStartStudy = (courseId: number) => {
+    if (activeStudySession === courseId) {
+      // Pause current session
+      setActiveStudySession(null);
+      Alert.alert('Study Paused', 'Great work! Your progress has been saved.');
+    } else {
+      // Start new session
+      setActiveStudySession(courseId);
+      setCourses(prev => prev.map(course => 
+        course.id === courseId 
+          ? { ...course, isActive: true }
+          : { ...course, isActive: false }
+      ));
+      Alert.alert('Study Started', 'Focus mode activated. Good luck!');
+    }
+  };
+
+  const handleQuickAction = (action: any) => {
+    Alert.alert(action.title, `Starting ${action.title.toLowerCase()}...`);
+  };
+
+  const handleAskCoach = () => {
+    router.push('/learning-chat');
+  };
+
   const renderMetricCard = (metric: any, index: number) => {
     const IconComponent = metric.icon;
     
@@ -126,11 +111,32 @@ export default function LearningScreen() {
     );
   };
 
-  const renderActiveCourse = (course: any, index: number) => {
-    const progressWidth = (width - 72) * (course.progress / 100);
+  const renderQuickAction = (action: any, index: number) => {
+    const IconComponent = action.icon;
     
     return (
-      <View key={index} style={styles.courseCard}>
+      <TouchableOpacity 
+        key={index} 
+        style={[styles.quickActionCard, { borderLeftColor: action.color }]}
+        onPress={() => handleQuickAction(action)}
+      >
+        <View style={[styles.quickActionIcon, { backgroundColor: action.color + '20' }]}>
+          <IconComponent size={20} color={action.color} />
+        </View>
+        <View style={styles.quickActionInfo}>
+          <Text style={styles.quickActionTitle}>{action.title}</Text>
+          <Text style={styles.quickActionTime}>{action.time}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderActiveCourse = (course: any, index: number) => {
+    const progressWidth = (width - 72) * (course.progress / 100);
+    const isActive = activeStudySession === course.id;
+    
+    return (
+      <View key={index} style={[styles.courseCard, isActive && styles.activeCourseCard]}>
         <View style={styles.courseHeader}>
           <View style={styles.courseInfo}>
             <Text style={styles.courseTitle}>{course.title}</Text>
@@ -138,9 +144,19 @@ export default function LearningScreen() {
             <Text style={styles.courseProgress}>
               {course.completedLessons}/{course.totalLessons} lessons • {course.timeLeft} left
             </Text>
+            {course.nextLesson && (
+              <Text style={styles.nextLesson}>Next: {course.nextLesson}</Text>
+            )}
           </View>
-          <TouchableOpacity style={[styles.playButton, { backgroundColor: course.color }]}>
-            <Play size={20} color="white" fill="white" />
+          <TouchableOpacity 
+            style={[styles.playButton, { backgroundColor: course.color }]}
+            onPress={() => handleStartStudy(course.id)}
+          >
+            {isActive ? (
+              <Pause size={20} color="white" fill="white" />
+            ) : (
+              <Play size={20} color="white" fill="white" />
+            )}
           </TouchableOpacity>
         </View>
         
@@ -155,84 +171,13 @@ export default function LearningScreen() {
           </View>
           <Text style={styles.progressText}>{course.progress}%</Text>
         </View>
-      </View>
-    );
-  };
-
-  const renderRecommendedCourse = (course: any, index: number) => {
-    return (
-      <View key={index} style={styles.recommendedCard}>
-        <View style={[styles.courseImage, { backgroundColor: course.color + '20' }]}>
-          <BookOpen size={24} color={course.color} />
-        </View>
-        <View style={styles.recommendedInfo}>
-          <Text style={styles.recommendedTitle}>{course.title}</Text>
-          <Text style={styles.recommendedProvider}>{course.provider}</Text>
-          <View style={styles.courseStats}>
-            <View style={styles.statItem}>
-              <Star size={12} color="#FFD93D" fill="#FFD93D" />
-              <Text style={styles.statText}>{course.rating}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Users size={12} color="#7F8C8D" />
-              <Text style={styles.statText}>{course.students}</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Clock size={12} color="#7F8C8D" />
-              <Text style={styles.statText}>{course.duration}</Text>
-            </View>
-          </View>
-          <View style={styles.courseFooter}>
-            <Text style={[styles.coursePrice, { color: course.price === 'Free' ? '#27AE60' : '#2C3E50' }]}>
-              {course.price}
-            </Text>
-            <TouchableOpacity style={styles.enrollButton}>
-              <Text style={styles.enrollText}>Enroll</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    );
-  };
-
-  const renderLearningGoal = (goal: any, index: number) => {
-    const getPriorityColor = (priority: string) => {
-      switch (priority) {
-        case 'high': return '#FF6B6B';
-        case 'medium': return '#FFD93D';
-        case 'low': return '#4ECDC4';
-        default: return '#7F8C8D';
-      }
-    };
-
-    const priorityColor = getPriorityColor(goal.priority);
-    const progressWidth = (width - 120) * (goal.progress / 100);
-    
-    return (
-      <View key={index} style={styles.goalCard}>
-        <View style={styles.goalHeader}>
-          <View style={styles.goalInfo}>
-            <Text style={styles.goalTitle}>{goal.title}</Text>
-            <Text style={styles.goalDeadline}>{goal.deadline}</Text>
-          </View>
-          <View style={[styles.priorityBadge, { backgroundColor: priorityColor + '20' }]}>
-            <Text style={[styles.priorityText, { color: priorityColor }]}>
-              {goal.priority.toUpperCase()}
-            </Text>
-          </View>
-        </View>
         
-        <View style={styles.goalProgress}>
-          <View style={styles.goalProgressBar}>
-            <View 
-              style={[
-                styles.goalProgressFill, 
-                { width: progressWidth, backgroundColor: priorityColor }
-              ]} 
-            />
+        {isActive && (
+          <View style={styles.activeIndicator}>
+            <View style={styles.pulseIndicator} />
+            <Text style={styles.activeText}>Study session active</Text>
           </View>
-          <Text style={styles.goalProgressText}>{goal.progress}%</Text>
-        </View>
+        )}
       </View>
     );
   };
@@ -241,7 +186,7 @@ export default function LearningScreen() {
     <>
       <Stack.Screen 
         options={{ 
-          title: "Learning & Growth",
+          title: "Learning",
           headerStyle: { backgroundColor: '#6C5CE7' },
           headerTintColor: 'white',
           headerTitleStyle: { fontWeight: 'bold' }
@@ -249,79 +194,78 @@ export default function LearningScreen() {
       />
       
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header Stats */}
-        <View style={styles.headerCard}>
-          <LinearGradient
-            colors={['#6C5CE7', '#A29BFE']}
-            style={styles.headerGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.headerContent}>
-              <BookOpen size={32} color="white" />
-              <Text style={styles.headerTitle}>Learning Progress</Text>
-              <Text style={styles.headerScore}>Level 8</Text>
-              <Text style={styles.headerSubtitle}>Knowledge seeker on a growth journey</Text>
+        {/* Today's Focus */}
+        <View style={styles.focusCard}>
+          <View style={styles.focusHeader}>
+            <View>
+              <Text style={styles.focusTitle}>Today&apos;s Focus</Text>
+              <Text style={styles.focusSubject}>{todaysFocus.subject}</Text>
             </View>
-          </LinearGradient>
+            <TouchableOpacity style={styles.coachButton} onPress={handleAskCoach}>
+              <MessageCircle size={20} color="#6C5CE7" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.focusProgress}>
+            <View style={styles.focusProgressBar}>
+              <View 
+                style={[
+                  styles.focusProgressFill, 
+                  { width: `${(todaysFocus.timeSpent / todaysFocus.targetTime) * 100}%` }
+                ]} 
+              />
+            </View>
+            <Text style={styles.focusTime}>
+              {todaysFocus.timeSpent}/{todaysFocus.targetTime} min
+            </Text>
+          </View>
+          
+          <View style={styles.focusStats}>
+            <View style={styles.focusStat}>
+              <Target size={16} color="#6C5CE7" />
+              <Text style={styles.focusStatText}>{todaysFocus.streak} day streak</Text>
+            </View>
+            <View style={styles.focusStat}>
+              <Star size={16} color="#FFD93D" />
+              <Text style={styles.focusStatText}>{todaysFocus.nextMilestone}</Text>
+            </View>
+          </View>
         </View>
 
         {/* Learning Metrics */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Learning Overview</Text>
+          <Text style={styles.sectionTitle}>Overview</Text>
           <View style={styles.metricsGrid}>
             {learningMetrics.map(renderMetricCard)}
           </View>
         </View>
 
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          {quickActions.map(renderQuickAction)}
+        </View>
+
         {/* Active Courses */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Continue Learning</Text>
-            <TouchableOpacity style={styles.addButton}>
-              <Plus size={20} color="#667eea" />
-            </TouchableOpacity>
-          </View>
-          {activeCourses.map(renderActiveCourse)}
+          <Text style={styles.sectionTitle}>My Courses</Text>
+          {courses.map(renderActiveCourse)}
         </View>
 
-        {/* Learning Goals */}
+        {/* Learning Insights */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Learning Goals</Text>
-          {learningGoals.map(renderLearningGoal)}
-        </View>
-
-        {/* Recommended Courses */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recommended for You</Text>
-          {recommendedCourses.map(renderRecommendedCourse)}
-        </View>
-
-        {/* Weekly Insights */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week's Progress</Text>
+          <Text style={styles.sectionTitle}>Insights</Text>
           <View style={styles.insightCard}>
             <View style={styles.insightHeader}>
-              <TrendingUp size={24} color="#6C5CE7" />
-              <Text style={styles.insightTitle}>Learning Streak</Text>
+              <TrendingUp size={20} color="#6C5CE7" />
+              <Text style={styles.insightTitle}>Keep it up!</Text>
             </View>
             <Text style={styles.insightText}>
-              Amazing! You've maintained a 12-day learning streak. You spent 8.5 hours learning this week across 3 different subjects.
+              You&apos;re on a 12-day learning streak. Consistency is key to mastering new skills.
             </Text>
-            <View style={styles.insightStats}>
-              <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>12</Text>
-                <Text style={styles.insightStatLabel}>Day Streak</Text>
-              </View>
-              <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>8.5h</Text>
-                <Text style={styles.insightStatLabel}>This Week</Text>
-              </View>
-              <View style={styles.insightStat}>
-                <Text style={styles.insightStatValue}>3</Text>
-                <Text style={styles.insightStatLabel}>Subjects</Text>
-              </View>
-            </View>
+            <TouchableOpacity style={styles.insightAction} onPress={handleAskCoach}>
+              <Text style={styles.insightActionText}>Get personalized tips</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -334,45 +278,80 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
-  headerCard: {
+  focusCard: {
+    backgroundColor: 'white',
     margin: 24,
     borderRadius: 16,
-    overflow: 'hidden',
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  headerGradient: {
-    padding: 24,
-    alignItems: 'center',
+  focusHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
-  headerContent: {
-    alignItems: 'center',
-  },
-  headerTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 12,
-  },
-  headerScore: {
-    color: 'white',
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginTop: 8,
-  },
-  headerSubtitle: {
-    color: 'white',
+  focusTitle: {
     fontSize: 14,
-    opacity: 0.9,
-    marginTop: 4,
+    color: '#7F8C8D',
+    marginBottom: 4,
+  },
+  focusSubject: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+  },
+  coachButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#6C5CE7' + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  focusProgress: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  focusProgressBar: {
+    flex: 1,
+    height: 8,
+    backgroundColor: '#E9ECEF',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginRight: 12,
+  },
+  focusProgressFill: {
+    height: '100%',
+    backgroundColor: '#6C5CE7',
+    borderRadius: 4,
+  },
+  focusTime: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2C3E50',
+  },
+  focusStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  focusStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  focusStatText: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginLeft: 6,
   },
   section: {
     marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 20,
@@ -380,19 +359,6 @@ const styles = StyleSheet.create({
     color: '#2C3E50',
     paddingHorizontal: 24,
     marginBottom: 16,
-  },
-  addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
   },
   metricsGrid: {
     flexDirection: 'row',
@@ -438,6 +404,42 @@ const styles = StyleSheet.create({
     color: '#27AE60',
     textAlign: 'center',
   },
+  quickActionCard: {
+    backgroundColor: 'white',
+    marginHorizontal: 24,
+    marginBottom: 12,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  quickActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  quickActionInfo: {
+    flex: 1,
+  },
+  quickActionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  quickActionTime: {
+    fontSize: 14,
+    color: '#7F8C8D',
+  },
   courseCard: {
     backgroundColor: 'white',
     marginHorizontal: 24,
@@ -449,6 +451,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+  },
+  activeCourseCard: {
+    borderWidth: 2,
+    borderColor: '#6C5CE7',
   },
   courseHeader: {
     flexDirection: 'row',
@@ -474,6 +480,12 @@ const styles = StyleSheet.create({
   courseProgress: {
     fontSize: 12,
     color: '#95A5A6',
+    marginBottom: 4,
+  },
+  nextLesson: {
+    fontSize: 12,
+    color: '#6C5CE7',
+    fontWeight: '500',
   },
   playButton: {
     width: 44,
@@ -503,135 +515,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#2C3E50',
   },
-  recommendedCard: {
-    backgroundColor: 'white',
-    marginHorizontal: 24,
-    marginBottom: 16,
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  courseImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  recommendedInfo: {
-    flex: 1,
-  },
-  recommendedTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-    marginBottom: 4,
-  },
-  recommendedProvider: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    marginBottom: 8,
-  },
-  courseStats: {
-    flexDirection: 'row',
-    marginBottom: 12,
-    gap: 16,
-  },
-  statItem: {
+  activeIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E9ECEF',
   },
-  statText: {
+  pulseIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#27AE60',
+    marginRight: 8,
+  },
+  activeText: {
     fontSize: 12,
-    color: '#7F8C8D',
-  },
-  courseFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  coursePrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  enrollButton: {
-    backgroundColor: '#6C5CE7',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-  },
-  enrollText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  goalCard: {
-    backgroundColor: 'white',
-    marginHorizontal: 24,
-    marginBottom: 12,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  goalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  goalInfo: {
-    flex: 1,
-  },
-  goalTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-    marginBottom: 4,
-  },
-  goalDeadline: {
-    fontSize: 14,
-    color: '#7F8C8D',
-  },
-  priorityBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  priorityText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  goalProgress: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  goalProgressBar: {
-    flex: 1,
-    height: 6,
-    backgroundColor: '#E9ECEF',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginRight: 12,
-  },
-  goalProgressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  goalProgressText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2C3E50',
+    color: '#27AE60',
+    fontWeight: '500',
   },
   insightCard: {
     backgroundColor: 'white',
@@ -653,30 +555,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#2C3E50',
-    marginLeft: 12,
+    marginLeft: 8,
   },
   insightText: {
     fontSize: 14,
     color: '#7F8C8D',
     lineHeight: 20,
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  insightStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  insightStat: {
+  insightAction: {
+    backgroundColor: '#6C5CE7',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  insightStatValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-  },
-  insightStatLabel: {
-    fontSize: 12,
-    color: '#7F8C8D',
-    marginTop: 4,
-    textAlign: 'center',
+  insightActionText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
