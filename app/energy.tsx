@@ -1,42 +1,34 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { 
   Zap, 
   Battery, 
-  Sun, 
   Moon,
   Utensils,
   Dumbbell,
   Heart,
-  TrendingUp,
-  Plus,
-  Play,
-  Award,
-  Clock,
-  Target
+  MessageCircle
 } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 
 const energyMetrics = [
   { label: 'Energy Level', value: '87%', icon: Zap, color: '#00B894', trend: '+12%' },
-  { label: 'Sleep Quality', value: '8.2/10', icon: Moon, color: '#00CEC9', trend: '+0.5' },
-  { label: 'Nutrition Score', value: '91%', icon: Utensils, color: '#55A3FF', trend: '+8%' },
-  { label: 'Recovery Rate', value: '94%', icon: Heart, color: '#74B9FF', trend: '+15%' }
+  { label: 'Sleep Quality', value: '8.2h', icon: Moon, color: '#00CEC9', trend: '+0.5h' },
+  { label: 'Nutrition', value: '91%', icon: Utensils, color: '#55A3FF', trend: '+8%' },
+  { label: 'Recovery', value: '94%', icon: Heart, color: '#74B9FF', trend: '+15%' }
 ];
 
 const dailyEnergyPattern = [
-  { time: '6 AM', level: 45, activity: 'Wake up' },
-  { time: '8 AM', level: 75, activity: 'Morning routine' },
-  { time: '10 AM', level: 90, activity: 'Peak focus' },
-  { time: '12 PM', level: 85, activity: 'Pre-lunch' },
-  { time: '2 PM', level: 60, activity: 'Post-lunch dip' },
-  { time: '4 PM', level: 80, activity: 'Afternoon boost' },
-  { time: '6 PM', level: 70, activity: 'Evening wind-down' },
-  { time: '8 PM', level: 50, activity: 'Relaxation' },
-  { time: '10 PM', level: 30, activity: 'Sleep prep' }
+  { time: '6AM', level: 45, activity: 'Wake up' },
+  { time: '9AM', level: 90, activity: 'Peak focus' },
+  { time: '12PM', level: 85, activity: 'Pre-lunch' },
+  { time: '3PM', level: 60, activity: 'Afternoon dip' },
+  { time: '6PM', level: 80, activity: 'Evening boost' },
+  { time: '9PM', level: 50, activity: 'Wind down' }
 ];
 
 const energyBoosters = [
@@ -45,81 +37,87 @@ const energyBoosters = [
     duration: '20 min',
     benefit: 'Instant refresh',
     icon: Moon,
-    color: '#00CEC9',
-    description: 'Quick energy restoration'
-  },
-  {
-    title: 'Green Smoothie',
-    duration: '5 min',
-    benefit: 'Natural boost',
-    icon: Utensils,
-    color: '#00B894',
-    description: 'Nutrient-packed energy'
+    color: '#00CEC9'
   },
   {
     title: 'Quick Workout',
     duration: '15 min',
     benefit: 'Endorphin rush',
     icon: Dumbbell,
-    color: '#55A3FF',
-    description: 'Activate your body'
+    color: '#55A3FF'
   },
   {
-    title: 'Breathing Exercise',
+    title: 'Breathing',
     duration: '10 min',
     benefit: 'Oxygen boost',
     icon: Heart,
-    color: '#74B9FF',
-    description: 'Mindful energy reset'
+    color: '#74B9FF'
+  },
+  {
+    title: 'Hydration',
+    duration: '2 min',
+    benefit: 'Cell function',
+    icon: Battery,
+    color: '#00B894'
   }
 ];
 
-const nutritionPlan = [
+const todaysTasks = [
   {
-    meal: 'Breakfast',
+    task: 'Morning hydration',
     time: '7:00 AM',
-    foods: ['Oatmeal with berries', 'Green tea', 'Almonds'],
-    energyRating: 9,
-    completed: true
+    description: '2 glasses of water',
+    completed: true,
+    icon: Battery,
+    color: '#00B894'
   },
   {
-    meal: 'Mid-Morning',
-    time: '10:00 AM',
-    foods: ['Apple with peanut butter'],
-    energyRating: 7,
-    completed: true
+    task: 'Nutritious breakfast',
+    time: '8:00 AM',
+    description: 'Protein + complex carbs',
+    completed: true,
+    icon: Utensils,
+    color: '#55A3FF'
   },
   {
-    meal: 'Lunch',
-    time: '12:30 PM',
-    foods: ['Quinoa salad', 'Grilled chicken', 'Avocado'],
-    energyRating: 9,
-    completed: false
+    task: 'Movement break',
+    time: '2:00 PM',
+    description: '10-minute walk',
+    completed: false,
+    icon: Dumbbell,
+    color: '#74B9FF'
   },
   {
-    meal: 'Afternoon',
-    time: '3:00 PM',
-    foods: ['Greek yogurt', 'Berries'],
-    energyRating: 8,
-    completed: false
-  },
-  {
-    meal: 'Dinner',
-    time: '6:30 PM',
-    foods: ['Salmon', 'Sweet potato', 'Broccoli'],
-    energyRating: 9,
-    completed: false
+    task: 'Power nap',
+    time: '3:30 PM',
+    description: '20-minute rest',
+    completed: false,
+    icon: Moon,
+    color: '#00CEC9'
   }
 ];
 
-const recoveryActivities = [
-  { activity: 'Stretching', duration: '15 min', completed: true, benefit: 'Muscle recovery' },
-  { activity: 'Hydration', target: '8 glasses', current: '6 glasses', benefit: 'Cell function' },
-  { activity: 'Deep sleep', target: '8 hours', current: '7.5 hours', benefit: 'Full restoration' },
-  { activity: 'Meditation', duration: '10 min', completed: false, benefit: 'Mental reset' }
+const weeklyGoals = [
+  { goal: 'Sleep 8+ hours', progress: 85, target: '7 days', current: '6 days' },
+  { goal: 'Daily movement', progress: 71, target: '7 days', current: '5 days' },
+  { goal: 'Hydration goal', progress: 92, target: '56 glasses', current: '52 glasses' },
+  { goal: 'Energy boosters', progress: 60, target: '14 sessions', current: '8 sessions' }
 ];
 
 export default function EnergyScreen() {
+  const [selectedBooster, setSelectedBooster] = useState<string | null>(null);
+
+  const handleHapticFeedback = async () => {
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handleChatPress = async () => {
+    await handleHapticFeedback();
+    router.push('/energy-chat');
+  };
+
   const renderMetricCard = (metric: any, index: number) => {
     const IconComponent = metric.icon;
     
@@ -130,91 +128,89 @@ export default function EnergyScreen() {
         </View>
         <Text style={styles.metricValue}>{metric.value}</Text>
         <Text style={styles.metricLabel}>{metric.label}</Text>
-        <Text style={styles.metricTrend}>{metric.trend} this week</Text>
+        <Text style={styles.metricTrend}>{metric.trend}</Text>
       </View>
     );
   };
 
   const renderEnergyBooster = (booster: any, index: number) => {
     const IconComponent = booster.icon;
+    const isSelected = selectedBooster === booster.title;
     
     return (
-      <TouchableOpacity key={index} style={styles.boosterCard} activeOpacity={0.8}>
-        <LinearGradient
-          colors={[booster.color, booster.color + 'CC']}
-          style={styles.boosterGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.boosterHeader}>
-            <IconComponent size={24} color="white" />
-            <Text style={styles.boosterDuration}>{booster.duration}</Text>
-          </View>
+      <TouchableOpacity 
+        key={index} 
+        style={[styles.boosterCard, isSelected && styles.boosterCardSelected]} 
+        activeOpacity={0.8}
+        onPress={async () => {
+          await handleHapticFeedback();
+          setSelectedBooster(isSelected ? null : booster.title);
+        }}
+      >
+        <View style={[styles.boosterIcon, { backgroundColor: booster.color + '20' }]}>
+          <IconComponent size={20} color={booster.color} />
+        </View>
+        <View style={styles.boosterContent}>
           <Text style={styles.boosterTitle}>{booster.title}</Text>
-          <Text style={styles.boosterDescription}>{booster.description}</Text>
-          <View style={styles.boosterFooter}>
-            <Text style={styles.boosterBenefit}>{booster.benefit}</Text>
-            <View style={styles.playButton}>
-              <Play size={16} color="white" fill="white" />
-            </View>
-          </View>
-        </LinearGradient>
+          <Text style={styles.boosterDuration}>{booster.duration}</Text>
+        </View>
+        <Text style={styles.boosterBenefit}>{booster.benefit}</Text>
       </TouchableOpacity>
     );
   };
 
-  const renderNutritionMeal = (meal: any, index: number) => {
+  const renderTodayTask = (task: any, index: number) => {
+    const IconComponent = task.icon;
+    
     return (
-      <View key={index} style={[styles.mealCard, meal.completed && styles.completedMeal]}>
-        <View style={styles.mealHeader}>
-          <View style={styles.mealInfo}>
-            <Text style={styles.mealName}>{meal.meal}</Text>
-            <Text style={styles.mealTime}>{meal.time}</Text>
-          </View>
-          <View style={styles.energyRating}>
-            <Zap size={16} color="#FFD93D" />
-            <Text style={styles.ratingText}>{meal.energyRating}/10</Text>
-          </View>
+      <TouchableOpacity 
+        key={index} 
+        style={[styles.taskCard, task.completed && styles.completedTask]}
+        activeOpacity={0.8}
+        onPress={handleHapticFeedback}
+      >
+        <View style={[styles.taskIcon, { backgroundColor: task.color + '20' }]}>
+          <IconComponent size={16} color={task.color} />
         </View>
-        
-        <View style={styles.foodsList}>
-          {meal.foods.map((food: string, foodIndex: number) => (
-            <Text key={foodIndex} style={styles.foodItem}>• {food}</Text>
-          ))}
+        <View style={styles.taskContent}>
+          <Text style={styles.taskName}>{task.task}</Text>
+          <Text style={styles.taskDescription}>{task.description}</Text>
         </View>
-        
-        {meal.completed && (
-          <View style={styles.completedBadge}>
-            <Text style={styles.completedText}>✓ Completed</Text>
-          </View>
-        )}
-      </View>
-    );
-  };
-
-  const renderRecoveryActivity = (activity: any, index: number) => {
-    return (
-      <View key={index} style={styles.recoveryCard}>
-        <View style={styles.recoveryHeader}>
-          <Text style={styles.recoveryActivity}>{activity.activity}</Text>
-          {activity.completed !== undefined && (
-            <View style={[styles.statusBadge, { backgroundColor: activity.completed ? '#27AE60' : '#E74C3C' }]}>
-              <Text style={styles.statusText}>{activity.completed ? 'Done' : 'Pending'}</Text>
+        <View style={styles.taskTime}>
+          <Text style={styles.taskTimeText}>{task.time}</Text>
+          {task.completed && (
+            <View style={styles.completedBadge}>
+              <Text style={styles.completedText}>✓</Text>
             </View>
           )}
         </View>
-        
-        <Text style={styles.recoveryBenefit}>{activity.benefit}</Text>
-        
-        {activity.duration && (
-          <Text style={styles.recoveryDetail}>Duration: {activity.duration}</Text>
-        )}
-        
-        {activity.target && (
-          <Text style={styles.recoveryDetail}>
-            Progress: {activity.current} / {activity.target}
-          </Text>
-        )}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderWeeklyGoal = (goal: any, index: number) => {
+    return (
+      <View key={index} style={styles.goalCard}>
+        <View style={styles.goalHeader}>
+          <Text style={styles.goalName}>{goal.goal}</Text>
+          <Text style={styles.goalProgress}>{goal.progress}%</Text>
+        </View>
+
+        <View style={styles.progressBar}>
+          <View 
+            style={[
+              styles.progressBarFill, 
+              { 
+                width: `${goal.progress}%`,
+                backgroundColor: goal.progress >= 80 ? '#00B894' : goal.progress >= 60 ? '#FFD93D' : '#FF6B6B'
+              }
+            ]} 
+          />
+        </View>
+
+        <Text style={styles.goalDetail}>
+          {goal.current} / {goal.target}
+        </Text>
       </View>
     );
   };
@@ -265,14 +261,23 @@ export default function EnergyScreen() {
               <Zap size={32} color="white" />
               <Text style={styles.headerTitle}>Energy Level</Text>
               <Text style={styles.headerScore}>87%</Text>
-              <Text style={styles.headerSubtitle}>High vitality and great recovery</Text>
+              <Text style={styles.headerSubtitle}>High vitality today</Text>
             </View>
+
+            <TouchableOpacity 
+              style={styles.chatButton}
+              onPress={handleChatPress}
+              activeOpacity={0.8}
+            >
+              <MessageCircle size={20} color="white" />
+              <Text style={styles.chatButtonText}>Energy Coach</Text>
+            </TouchableOpacity>
           </LinearGradient>
         </View>
 
         {/* Energy Metrics */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Vitality Overview</Text>
+          <Text style={styles.sectionTitle}>Today&apos;s Vitals</Text>
           <View style={styles.metricsGrid}>
             {energyMetrics.map(renderMetricCard)}
           </View>
@@ -280,7 +285,7 @@ export default function EnergyScreen() {
 
         {/* Daily Energy Pattern */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's Energy Pattern</Text>
+          <Text style={styles.sectionTitle}>Energy Pattern</Text>
           <View style={styles.patternCard}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.patternContainer}>
@@ -292,50 +297,22 @@ export default function EnergyScreen() {
 
         {/* Energy Boosters */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Energy Boosters</Text>
-          <View style={styles.boostersGrid}>
+          <Text style={styles.sectionTitle}>Quick Boosters</Text>
+          <View style={styles.boostersList}>
             {energyBoosters.map(renderEnergyBooster)}
           </View>
         </View>
 
-        {/* Nutrition Plan */}
+        {/* Today's Tasks */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's Nutrition Plan</Text>
-          {nutritionPlan.map(renderNutritionMeal)}
+          <Text style={styles.sectionTitle}>Today&apos;s Energy Tasks</Text>
+          {todaysTasks.map(renderTodayTask)}
         </View>
 
-        {/* Recovery Activities */}
+        {/* Weekly Goals */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recovery & Restoration</Text>
-          {recoveryActivities.map(renderRecoveryActivity)}
-        </View>
-
-        {/* Weekly Progress */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week's Energy</Text>
-          <View style={styles.progressCard}>
-            <View style={styles.progressHeader}>
-              <TrendingUp size={24} color="#00B894" />
-              <Text style={styles.progressTitle}>Energy Optimization</Text>
-            </View>
-            <Text style={styles.progressText}>
-              Outstanding energy management this week! Your consistent sleep schedule and nutrition plan boosted your average energy by 15%. Keep up the great work!
-            </Text>
-            <View style={styles.progressStats}>
-              <View style={styles.progressStat}>
-                <Text style={styles.progressStatValue}>+15%</Text>
-                <Text style={styles.progressStatLabel}>Energy Boost</Text>
-              </View>
-              <View style={styles.progressStat}>
-                <Text style={styles.progressStatValue}>8.2h</Text>
-                <Text style={styles.progressStatLabel}>Avg Sleep</Text>
-              </View>
-              <View style={styles.progressStat}>
-                <Text style={styles.progressStatValue}>91%</Text>
-                <Text style={styles.progressStatLabel}>Nutrition Score</Text>
-              </View>
-            </View>
-          </View>
+          <Text style={styles.sectionTitle}>This Week&apos;s Goals</Text>
+          {weeklyGoals.map(renderWeeklyGoal)}
         </View>
       </ScrollView>
     </>
@@ -376,6 +353,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.9,
     marginTop: 4,
+  },
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 16,
+  },
+  chatButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   section: {
     marginBottom: 32,
@@ -430,6 +422,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#27AE60',
     textAlign: 'center',
+    fontWeight: '600',
   },
   patternCard: {
     backgroundColor: 'white',
@@ -475,63 +468,56 @@ const styles = StyleSheet.create({
     color: '#7F8C8D',
     textAlign: 'center',
   },
-  boostersGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  boostersList: {
     paddingHorizontal: 24,
-    justifyContent: 'space-between',
   },
   boosterCard: {
-    width: (width - 60) / 2,
-    marginBottom: 16,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  boosterGradient: {
+    backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
-    height: 140,
-    justifyContent: 'space-between',
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  boosterHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  boosterCardSelected: {
+    borderWidth: 2,
+    borderColor: '#00B894',
   },
-  boosterDuration: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  boosterTitle: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  boosterDescription: {
-    color: 'white',
-    fontSize: 12,
-    opacity: 0.9,
-  },
-  boosterFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  boosterBenefit: {
-    color: 'white',
-    fontSize: 10,
-    opacity: 0.8,
-  },
-  playButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  boosterIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 16,
   },
-  mealCard: {
+  boosterContent: {
+    flex: 1,
+  },
+  boosterTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  boosterDuration: {
+    fontSize: 12,
+    color: '#7F8C8D',
+  },
+  boosterBenefit: {
+    fontSize: 12,
+    color: '#00B894',
+    fontWeight: '600',
+  },
+  taskCard: {
     backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
     marginHorizontal: 24,
     marginBottom: 12,
     borderRadius: 16,
@@ -542,60 +528,54 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  completedMeal: {
+  completedTask: {
+    opacity: 0.7,
     borderLeftWidth: 4,
     borderLeftColor: '#27AE60',
   },
-  mealHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  taskIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginRight: 12,
   },
-  mealInfo: {
+  taskContent: {
     flex: 1,
   },
-  mealName: {
+  taskName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#2C3E50',
     marginBottom: 2,
   },
-  mealTime: {
+  taskDescription: {
     fontSize: 12,
     color: '#7F8C8D',
   },
-  energyRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  taskTime: {
+    alignItems: 'flex-end',
   },
-  ratingText: {
+  taskTimeText: {
     fontSize: 12,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-  },
-  foodsList: {
-    marginBottom: 8,
-  },
-  foodItem: {
-    fontSize: 14,
     color: '#7F8C8D',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   completedBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#27AE6020',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    backgroundColor: '#27AE60',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   completedText: {
     fontSize: 10,
-    color: '#27AE60',
-    fontWeight: '600',
+    color: 'white',
+    fontWeight: 'bold',
   },
-  recoveryCard: {
+  goalCard: {
     backgroundColor: 'white',
     marginHorizontal: 24,
     marginBottom: 12,
@@ -607,80 +587,35 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  recoveryHeader: {
+  goalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  recoveryActivity: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusText: {
-    fontSize: 10,
-    color: 'white',
-    fontWeight: '600',
-  },
-  recoveryBenefit: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    marginBottom: 4,
-  },
-  recoveryDetail: {
-    fontSize: 12,
-    color: '#95A5A6',
-  },
-  progressCard: {
-    backgroundColor: 'white',
-    marginHorizontal: 24,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 12,
   },
-  progressTitle: {
+  goalName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+  },
+  goalProgress: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2C3E50',
-    marginLeft: 12,
+    color: '#00B894',
   },
-  progressText: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    lineHeight: 20,
-    marginBottom: 20,
+  progressBar: {
+    height: 6,
+    backgroundColor: '#E9ECEF',
+    borderRadius: 3,
+    marginBottom: 8,
+    overflow: 'hidden',
   },
-  progressStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
   },
-  progressStat: {
-    alignItems: 'center',
-  },
-  progressStatValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-  },
-  progressStatLabel: {
+  goalDetail: {
     fontSize: 12,
     color: '#7F8C8D',
-    marginTop: 4,
-    textAlign: 'center',
   },
 });
