@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Modal, Platform } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Modal, Platform, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,6 +25,20 @@ import { useCategories, useCategoryData, createActivityImpact } from '@/contexts
 
 const { width } = Dimensions.get('window');
 
+interface HealthGoal {
+  id: string;
+  title: string;
+  description: string;
+  category: 'movement' | 'nutrition' | 'mindfulness' | 'sleep' | 'hydration';
+  icon: React.ComponentType<any>;
+  color: string;
+  completed: boolean;
+  completedAt?: string;
+  streak: number;
+  importance: 'high' | 'medium' | 'low';
+  timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'anytime';
+}
+
 interface HealthMetric {
   id: string;
   label: string;
@@ -45,18 +59,91 @@ interface QuickAction {
   increment?: number;
 }
 
+const getInitialHealthGoals = (): HealthGoal[] => [
+  {
+    id: 'morning_movement',
+    title: 'Morning Movement',
+    description: 'Start your day with 10 minutes of movement - stretching, walking, or light exercise',
+    category: 'movement',
+    icon: Activity,
+    color: '#FF6B6B',
+    completed: false,
+    streak: 0,
+    importance: 'high',
+    timeOfDay: 'morning'
+  },
+  {
+    id: 'hydration_goal',
+    title: 'Stay Hydrated',
+    description: 'Drink 8 glasses of water throughout the day',
+    category: 'hydration',
+    icon: Droplets,
+    color: '#4ECDC4',
+    completed: false,
+    streak: 0,
+    importance: 'high',
+    timeOfDay: 'anytime'
+  },
+  {
+    id: 'mindful_break',
+    title: 'Mindful Break',
+    description: 'Take 5 minutes for deep breathing or meditation',
+    category: 'mindfulness',
+    icon: Brain,
+    color: '#FFD93D',
+    completed: false,
+    streak: 0,
+    importance: 'medium',
+    timeOfDay: 'anytime'
+  },
+  {
+    id: 'healthy_meal',
+    title: 'Nutritious Meal',
+    description: 'Eat at least one balanced meal with vegetables and protein',
+    category: 'nutrition',
+    icon: Utensils,
+    color: '#27AE60',
+    completed: false,
+    streak: 0,
+    importance: 'high',
+    timeOfDay: 'anytime'
+  },
+  {
+    id: 'evening_routine',
+    title: 'Evening Wind-down',
+    description: 'Create a calming evening routine 30 minutes before bed',
+    category: 'sleep',
+    icon: Moon,
+    color: '#6C5CE7',
+    completed: false,
+    streak: 0,
+    importance: 'medium',
+    timeOfDay: 'evening'
+  },
+  {
+    id: 'posture_check',
+    title: 'Posture Check',
+    description: 'Take hourly breaks to check and correct your posture',
+    category: 'movement',
+    icon: User,
+    color: '#E67E22',
+    completed: false,
+    streak: 0,
+    importance: 'medium',
+    timeOfDay: 'anytime'
+  }
+];
+
 const getInitialHealthMetrics = (): HealthMetric[] => [
-  { id: 'steps', label: 'Steps Today', value: 0, target: 10000, unit: 'steps', icon: Activity, color: '#FF6B6B', actionable: false },
-  { id: 'water', label: 'Water Intake', value: 0, target: 8, unit: 'glasses', icon: Droplets, color: '#4ECDC4', actionable: true },
-  { id: 'sleep', label: 'Sleep Hours', value: 0, target: 8, unit: 'hours', icon: Moon, color: '#6C5CE7', actionable: true },
-  { id: 'meditation', label: 'Meditation', value: 0, target: 20, unit: 'minutes', icon: Brain, color: '#FFD93D', actionable: true }
+  { id: 'steps', label: 'Steps Today', value: 0, target: 8000, unit: 'steps', icon: Activity, color: '#FF6B6B', actionable: false },
+  { id: 'water', label: 'Water Intake', value: 0, target: 8, unit: 'glasses', icon: Droplets, color: '#4ECDC4', actionable: true }
 ];
 
 const quickActions: QuickAction[] = [
   { id: 'water', title: 'Water', icon: Droplets, color: '#4ECDC4', action: 'water', increment: 1 },
-  { id: 'meditation', title: 'Meditate', icon: Brain, color: '#6C5CE7', action: 'meditation', increment: 10 },
-  { id: 'meal', title: 'Meal', icon: Utensils, color: '#27AE60', action: 'meal' },
-  { id: 'mood', title: 'Mood', icon: Heart, color: '#FFD93D', action: 'mood' }
+  { id: 'movement', title: 'Move', icon: Activity, color: '#FF6B6B', action: 'movement' },
+  { id: 'breathe', title: 'Breathe', icon: Brain, color: '#FFD93D', action: 'breathe' },
+  { id: 'posture', title: 'Posture', icon: User, color: '#E67E22', action: 'posture' }
 ];
 
 const healthPrograms = [
@@ -240,30 +327,12 @@ const getDefaultHealthTips = () => [
   }
 ];
 
-const weeklyGoals = [
-  {
-    title: 'Stay active daily',
-    current: 5,
-    target: 7,
-    color: '#FF6B6B'
-  },
-  {
-    title: 'Drink enough water',
-    current: 6,
-    target: 7,
-    color: '#4ECDC4'
-  },
-  {
-    title: 'Get quality sleep',
-    current: 4,
-    target: 7,
-    color: '#6C5CE7'
-  }
-];
+
 
 export default function HealthScreen() {
   const { addActivity } = useCategories();
-  const { score: healthScore, weeklyImprovement } = useCategoryData('health');
+  const { score: healthScore } = useCategoryData('health');
+  const [healthGoals, setHealthGoals] = useState<HealthGoal[]>(getInitialHealthGoals());
   const [healthMetrics, setHealthMetrics] = useState<HealthMetric[]>(getInitialHealthMetrics());
   const [dailyStreak, setDailyStreak] = useState<number>(0);
   const [selectedMetric, setSelectedMetric] = useState<HealthMetric | null>(null);
@@ -271,24 +340,41 @@ export default function HealthScreen() {
   const [lastResetDate, setLastResetDate] = useState<string>('');
   const [isPedometerAvailable, setIsPedometerAvailable] = useState<boolean>(false);
   const [pastStepCount, setPastStepCount] = useState<number>(0);
+  const [completedGoalsToday, setCompletedGoalsToday] = useState<number>(0);
+  const [totalGoalsCompleted, setTotalGoalsCompleted] = useState<number>(0);
 
   const [personalizedTips, setPersonalizedTips] = useState<any[]>(getDefaultHealthTips());
 
   const loadHealthData = React.useCallback(async () => {
     try {
+      const savedGoals = await AsyncStorage.getItem('healthGoals');
       const savedMetrics = await AsyncStorage.getItem('healthMetrics');
       const savedStreak = await AsyncStorage.getItem('healthStreak');
       const savedResetDate = await AsyncStorage.getItem('healthResetDate');
+      const savedCompletedToday = await AsyncStorage.getItem('completedGoalsToday');
+      const savedTotalCompleted = await AsyncStorage.getItem('totalGoalsCompleted');
+      
+      if (savedGoals) {
+        const parsedGoals = JSON.parse(savedGoals);
+        const initialGoals = getInitialHealthGoals();
+        const restoredGoals = parsedGoals.map((goal: any) => {
+          const initialGoal = initialGoals.find(g => g.id === goal.id);
+          return {
+            ...goal,
+            icon: initialGoal?.icon || Activity
+          };
+        });
+        setHealthGoals(restoredGoals);
+      }
       
       if (savedMetrics) {
         const parsedMetrics = JSON.parse(savedMetrics);
-        // Restore icon components that were lost during serialization
         const initialMetrics = getInitialHealthMetrics();
         const restoredMetrics = parsedMetrics.map((metric: any) => {
           const initialMetric = initialMetrics.find(m => m.id === metric.id);
           return {
             ...metric,
-            icon: initialMetric?.icon || Activity // fallback to Activity icon
+            icon: initialMetric?.icon || Activity
           };
         });
         setHealthMetrics(restoredMetrics);
@@ -301,6 +387,14 @@ export default function HealthScreen() {
       if (savedResetDate) {
         setLastResetDate(savedResetDate);
       }
+      
+      if (savedCompletedToday) {
+        setCompletedGoalsToday(parseInt(savedCompletedToday));
+      }
+      
+      if (savedTotalCompleted) {
+        setTotalGoalsCompleted(parseInt(savedTotalCompleted));
+      }
     } catch (error) {
       console.error('Error loading health data:', error);
     }
@@ -308,28 +402,33 @@ export default function HealthScreen() {
 
   const saveHealthData = React.useCallback(async () => {
     try {
-      // Remove icon components before saving to avoid serialization issues
+      const goalsToSave = healthGoals.map(goal => ({
+        ...goal,
+        icon: undefined
+      }));
       const metricsToSave = healthMetrics.map(metric => ({
         ...metric,
-        icon: undefined // Remove the icon component
+        icon: undefined
       }));
+      
+      await AsyncStorage.setItem('healthGoals', JSON.stringify(goalsToSave));
       await AsyncStorage.setItem('healthMetrics', JSON.stringify(metricsToSave));
       await AsyncStorage.setItem('healthStreak', dailyStreak.toString());
       await AsyncStorage.setItem('healthResetDate', lastResetDate);
+      await AsyncStorage.setItem('completedGoalsToday', completedGoalsToday.toString());
+      await AsyncStorage.setItem('totalGoalsCompleted', totalGoalsCompleted.toString());
     } catch (error) {
       console.error('Error saving health data:', error);
     }
-  }, [healthMetrics, dailyStreak, lastResetDate]);
+  }, [healthGoals, healthMetrics, dailyStreak, lastResetDate, completedGoalsToday, totalGoalsCompleted]);
 
   const checkDailyReset = React.useCallback(() => {
     const today = new Date().toDateString();
     const lastReset = lastResetDate;
     
     if (lastReset !== today) {
-      // Reset daily metrics but keep streak if goals were met yesterday
-      const yesterdayGoalsMet = healthMetrics.every(metric => 
-        !metric.actionable || metric.value >= metric.target
-      );
+      // Check if yesterday's goals were met for streak calculation
+      const yesterdayGoalsMet = healthGoals.filter(goal => goal.completed).length >= Math.ceil(healthGoals.length * 0.6); // 60% completion threshold
       
       if (lastReset && yesterdayGoalsMet) {
         setDailyStreak(prev => prev + 1);
@@ -337,18 +436,25 @@ export default function HealthScreen() {
         setDailyStreak(0);
       }
       
-      // Reset daily values
-      setHealthMetrics(prev => prev.map(metric => ({
-        ...metric,
-        value: metric.id === 'steps' ? 0 : 0 // Reset steps to 0 for new day
+      // Reset daily goals and metrics
+      setHealthGoals(prev => prev.map(goal => ({
+        ...goal,
+        completed: false,
+        completedAt: undefined
       })));
       
-      // Reset step counters for new day
+      setHealthMetrics(prev => prev.map(metric => ({
+        ...metric,
+        value: metric.id === 'steps' ? 0 : 0
+      })));
+      
+      // Reset daily counters
+      setCompletedGoalsToday(0);
       setPastStepCount(0);
       
       setLastResetDate(today);
     }
-  }, [lastResetDate, healthMetrics]);
+  }, [lastResetDate, healthGoals]);
 
   // Load saved metrics from storage and initialize pedometer
   useEffect(() => {
@@ -362,10 +468,55 @@ export default function HealthScreen() {
     setPersonalizedTips(tips);
   };
 
-  // Save data whenever metrics change
+  // Save data whenever goals or metrics change
   useEffect(() => {
     saveHealthData();
   }, [saveHealthData]);
+  
+  // Toggle goal completion
+  const toggleGoalCompletion = (goalId: string) => {
+    setHealthGoals(prev => prev.map(goal => {
+      if (goal.id === goalId) {
+        const wasCompleted = goal.completed;
+        const newCompleted = !wasCompleted;
+        
+        // Update counters
+        if (newCompleted && !wasCompleted) {
+          setCompletedGoalsToday(prev => prev + 1);
+          setTotalGoalsCompleted(prev => prev + 1);
+        } else if (!newCompleted && wasCompleted) {
+          setCompletedGoalsToday(prev => Math.max(0, prev - 1));
+          setTotalGoalsCompleted(prev => Math.max(0, prev - 1));
+        }
+        
+        // Add activity for completion
+        if (newCompleted) {
+          const activityData = {
+            ...createActivityImpact.healthActivity(),
+            categoryId: 'health',
+            title: `Completed: ${goal.title}`,
+            impact: { health: goal.importance === 'high' ? 3 : goal.importance === 'medium' ? 2 : 1 }
+          };
+          addActivity(activityData);
+          
+          // Show encouraging message
+          Alert.alert(
+            '🎉 Goal Completed!',
+            `Great job completing "${goal.title}"! Every small step counts towards a healthier you.`,
+            [{ text: 'Keep Going!', style: 'default' }]
+          );
+        }
+        
+        return {
+          ...goal,
+          completed: newCompleted,
+          completedAt: newCompleted ? new Date().toISOString() : undefined,
+          streak: newCompleted ? goal.streak + 1 : Math.max(0, goal.streak - 1)
+        };
+      }
+      return goal;
+    }));
+  };
 
   // Initialize pedometer for real step tracking
   const initializePedometer = React.useCallback(async () => {
@@ -482,7 +633,7 @@ export default function HealthScreen() {
         cleanup();
       }
     };
-  }, []);
+  }, [initializePedometer]);
   
   const updateMetric = (metricId: string, increment: number) => {
     setHealthMetrics(prev => prev.map(metric => {
@@ -737,7 +888,7 @@ export default function HealthScreen() {
               <Text style={styles.headerTitle}>Health</Text>
               <Text style={styles.headerScore}>{healthScore}/100</Text>
               <Text style={styles.headerSubtitle}>
-                {weeklyImprovement > 0 ? `+${weeklyImprovement} this week` : 'Keep building healthy habits'}
+                {completedGoalsToday > 0 ? `${completedGoalsToday} goals completed today!` : 'Start your healthy day!'}
               </Text>
               
               <TouchableOpacity 
@@ -762,51 +913,144 @@ export default function HealthScreen() {
             
             <View style={styles.statCard}>
               <TrendingUp size={20} color="#27AE60" />
-              <Text style={styles.statValue}>{Math.round((healthMetrics.filter(m => m.actionable && m.value >= m.target).length / healthMetrics.filter(m => m.actionable).length) * 100) || 0}%</Text>
-              <Text style={styles.statLabel}>Goals Met</Text>
+              <Text style={styles.statValue}>{Math.round((completedGoalsToday / healthGoals.length) * 100)}%</Text>
+              <Text style={styles.statLabel}>Goals Today</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Daily Health Goals */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Today's Health Goals</Text>
+          <Text style={styles.sectionSubtitle}>
+            Complete {Math.ceil(healthGoals.length * 0.6)} goals to maintain your streak
+          </Text>
+          {healthGoals.map((goal, index) => {
+            const IconComponent = goal.icon;
+            const isCompleted = goal.completed;
+            
+            return (
+              <TouchableOpacity 
+                key={index}
+                style={[
+                  styles.goalCard,
+                  isCompleted && styles.goalCardCompleted
+                ]}
+                onPress={() => toggleGoalCompletion(goal.id)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.goalHeader}>
+                  <View style={[styles.goalIcon, { backgroundColor: goal.color + '20' }]}>
+                    {React.createElement(IconComponent, { size: 24, color: goal.color })}
+                  </View>
+                  
+                  <View style={styles.goalInfo}>
+                    <Text style={[styles.goalTitle, isCompleted && styles.goalTitleCompleted]}>
+                      {goal.title}
+                    </Text>
+                    <Text style={[styles.goalDescription, isCompleted && styles.goalDescriptionCompleted]}>
+                      {goal.description}
+                    </Text>
+                    
+                    <View style={styles.goalMeta}>
+                      <View style={[styles.importanceBadge, { backgroundColor: 
+                        goal.importance === 'high' ? '#E74C3C' : 
+                        goal.importance === 'medium' ? '#F39C12' : '#95A5A6'
+                      }]}>
+                        <Text style={styles.importanceBadgeText}>
+                          {goal.importance.toUpperCase()}
+                        </Text>
+                      </View>
+                      
+                      {goal.timeOfDay !== 'anytime' && (
+                        <View style={styles.timeBadge}>
+                          <Text style={styles.timeBadgeText}>
+                            {goal.timeOfDay?.toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                      
+                      {goal.streak > 0 && (
+                        <View style={styles.streakBadge}>
+                          <Text style={styles.streakBadgeText}>
+                            🔥 {goal.streak}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.goalCheckbox,
+                      isCompleted && styles.goalCheckboxCompleted
+                    ]}
+                    onPress={() => toggleGoalCompletion(goal.id)}
+                  >
+                    {isCompleted ? (
+                      <CheckCircle size={28} color="#27AE60" />
+                    ) : (
+                      <View style={styles.goalCheckboxEmpty} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Progress Summary */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Today's Progress</Text>
+          <View style={styles.progressSummaryCard}>
+            <View style={styles.progressSummaryHeader}>
+              <Text style={styles.progressSummaryTitle}>Goals Completed</Text>
+              <Text style={styles.progressSummaryValue}>
+                {completedGoalsToday}/{healthGoals.length}
+              </Text>
+            </View>
+            
+            <View style={styles.progressSummaryBar}>
+              <View 
+                style={[
+                  styles.progressSummaryFill,
+                  { width: `${(completedGoalsToday / healthGoals.length) * 100}%` }
+                ]}
+              />
+            </View>
+            
+            <View style={styles.progressStats}>
+              <View style={styles.progressStat}>
+                <Text style={styles.progressStatValue}>{totalGoalsCompleted}</Text>
+                <Text style={styles.progressStatLabel}>Total Completed</Text>
+              </View>
+              
+              <View style={styles.progressStat}>
+                <Text style={styles.progressStatValue}>{dailyStreak}</Text>
+                <Text style={styles.progressStatLabel}>Day Streak</Text>
+              </View>
+              
+              <View style={styles.progressStat}>
+                <Text style={styles.progressStatValue}>
+                  {Math.round((completedGoalsToday / healthGoals.length) * 100)}%
+                </Text>
+                <Text style={styles.progressStatLabel}>Today</Text>
+              </View>
             </View>
           </View>
         </View>
 
         {/* Today's Metrics */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today</Text>
+          <Text style={styles.sectionTitle}>Health Metrics</Text>
           {healthMetrics.map(renderMetricCard)}
         </View>
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Log</Text>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActionsGrid}>
             {quickActions.map(renderQuickAction)}
-          </View>
-        </View>
-
-        {/* Weekly Goals */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Weekly Goals</Text>
-          <View style={styles.weeklyGoalsContainer}>
-            {weeklyGoals.map((goal, index) => {
-              const progress = (goal.current / goal.target) * 100;
-              return (
-                <View key={index} style={styles.weeklyGoalCard}>
-                  <View style={styles.weeklyGoalHeader}>
-                    <Text style={styles.weeklyGoalTitle}>{goal.title}</Text>
-                    <Text style={[styles.weeklyGoalProgress, { color: goal.color }]}>
-                      {goal.current}/{goal.target}
-                    </Text>
-                  </View>
-                  <View style={styles.weeklyProgressBar}>
-                    <View 
-                      style={[
-                        styles.weeklyProgressFill, 
-                        { width: `${Math.min(progress, 100)}%`, backgroundColor: goal.color }
-                      ]} 
-                    />
-                  </View>
-                </View>
-              );
-            })}
           </View>
         </View>
 
@@ -1618,5 +1862,172 @@ const styles = StyleSheet.create({
     color: '#7F8C8D',
     marginTop: 4,
     textAlign: 'center',
+  },
+  
+  // Goal-focused styles
+  goalCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    marginHorizontal: 24,
+    marginBottom: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  goalCardCompleted: {
+    borderColor: '#27AE60',
+    backgroundColor: 'rgba(39, 174, 96, 0.05)',
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  goalIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  goalInfo: {
+    flex: 1,
+    marginRight: 16,
+  },
+  goalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 4,
+  },
+  goalTitleCompleted: {
+    color: '#27AE60',
+    textDecorationLine: 'line-through',
+  },
+  goalDescription: {
+    fontSize: 14,
+    color: '#7F8C8D',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  goalDescriptionCompleted: {
+    color: '#95A5A6',
+  },
+  goalMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  importanceBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  importanceBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  timeBadge: {
+    backgroundColor: '#E9ECEF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  timeBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#6C757D',
+  },
+  streakBadge: {
+    backgroundColor: '#FFF3CD',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  streakBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#856404',
+  },
+  goalCheckbox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  goalCheckboxCompleted: {
+    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+  },
+  goalCheckboxEmpty: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#BDC3C7',
+  },
+  
+  // Progress summary styles
+  progressSummaryCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    marginHorizontal: 24,
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  progressSummaryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  progressSummaryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+  },
+  progressSummaryValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#27AE60',
+  },
+  progressSummaryBar: {
+    height: 8,
+    backgroundColor: '#E9ECEF',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  progressSummaryFill: {
+    height: '100%',
+    backgroundColor: '#27AE60',
+    borderRadius: 4,
+  },
+  progressStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  progressStat: {
+    alignItems: 'center',
+  },
+  progressStatValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+  },
+  progressStatLabel: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginTop: 4,
   },
 });
