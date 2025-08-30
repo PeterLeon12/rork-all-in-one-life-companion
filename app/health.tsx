@@ -137,15 +137,7 @@ const getInitialHealthMetrics = (): HealthMetric[] => [
 
 
 
-const healthPrograms = [
-  {
-    title: 'Mindfulness Journey',
-    description: 'Daily meditation practice',
-    progress: 29,
-    color: '#6C5CE7',
-    route: '/mindfulness'
-  }
-];
+
 
 // Function to generate personalized health tips based on user profile
 const generatePersonalizedHealthTips = async () => {
@@ -785,42 +777,7 @@ export default function HealthScreen() {
 
 
 
-  const renderProgram = (program: any, index: number) => {
-    const progressWidth = (width - 72) * (program.progress / 100);
-    
-    return (
-      <TouchableOpacity 
-        key={index} 
-        style={styles.programCard}
-        onPress={() => program.route && router.push(program.route)}
-        activeOpacity={0.8}
-      >
-        <View style={styles.programHeader}>
-          <View style={styles.programInfo}>
-            <Text style={styles.programTitle}>{program.title}</Text>
-            <Text style={styles.programDescription}>{program.description}</Text>
-            {program.progress > 0 && (
-              <Text style={styles.programDescription}>{program.progress}% complete</Text>
-            )}
-          </View>
-          <View style={[styles.programIndicator, { backgroundColor: program.color }]} />
-        </View>
-        
-        {program.progress > 0 && (
-          <View style={styles.progressBarContainer}>
-            <View style={styles.progressBarBackground}>
-              <View 
-                style={[
-                  styles.progressBarFill, 
-                  { width: progressWidth, backgroundColor: program.color }
-                ]} 
-              />
-            </View>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
+
 
   return (
     <>
@@ -890,7 +847,7 @@ export default function HealthScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionTitle}>Today's Health Goals</Text>
+              <Text style={styles.sectionTitle}>Today&apos;s Health Goals</Text>
               <Text style={styles.sectionSubtitle}>
                 Complete {Math.ceil(healthGoals.length * 0.6)} goals to maintain your streak
               </Text>
@@ -1003,7 +960,7 @@ export default function HealthScreen() {
         {/* Progress Summary */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderSimple}>
-            <Text style={styles.sectionTitle}>Today's Progress</Text>
+            <Text style={styles.sectionTitle}>Today&apos;s Progress</Text>
           </View>
           <View style={styles.progressSummaryCard}>
             <View style={styles.progressSummaryHeader}>
@@ -1074,13 +1031,7 @@ export default function HealthScreen() {
           </ScrollView>
         </View>
 
-        {/* Programs */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderSimple}>
-            <Text style={styles.sectionTitle}>Health Programs</Text>
-          </View>
-          {healthPrograms.map(renderProgram)}
-        </View>
+
 
         {/* Health Tools Section */}
         <View style={styles.section}>
