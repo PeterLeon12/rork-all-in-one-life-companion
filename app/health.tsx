@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Modal, Platform, Alert } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Modal, Platform, Alert, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,7 +19,10 @@ import {
   TrendingUp,
   BarChart3,
   User,
-  Target
+  Target,
+  Edit3,
+  Save,
+  Trash2
 } from 'lucide-react-native';
 import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
 
@@ -50,14 +53,7 @@ interface HealthMetric {
   actionable: boolean;
 }
 
-interface QuickAction {
-  id: string;
-  title: string;
-  icon: React.ComponentType<any>;
-  color: string;
-  action?: string;
-  increment?: number;
-}
+
 
 const getInitialHealthGoals = (): HealthGoal[] => [
   {
@@ -139,34 +135,15 @@ const getInitialHealthMetrics = (): HealthMetric[] => [
   { id: 'water', label: 'Water Intake', value: 0, target: 8, unit: 'glasses', icon: Droplets, color: '#4ECDC4', actionable: true }
 ];
 
-const quickActions: QuickAction[] = [
-  { id: 'water', title: 'Water', icon: Droplets, color: '#4ECDC4', action: 'water', increment: 1 },
-  { id: 'movement', title: 'Move', icon: Activity, color: '#FF6B6B', action: 'movement' },
-  { id: 'breathe', title: 'Breathe', icon: Brain, color: '#FFD93D', action: 'breathe' },
-  { id: 'posture', title: 'Posture', icon: User, color: '#E67E22', action: 'posture' }
-];
+
 
 const healthPrograms = [
-  {
-    title: 'Daily Wellness',
-    description: 'Track your daily health habits',
-    progress: 67,
-    color: '#4ECDC4',
-    route: '/health'
-  },
   {
     title: 'Mindfulness Journey',
     description: 'Daily meditation practice',
     progress: 29,
     color: '#6C5CE7',
     route: '/mindfulness'
-  },
-  {
-    title: 'Activity History',
-    description: 'View your fitness progress',
-    progress: 45,
-    color: '#27AE60',
-    route: '/fitness-history'
   }
 ];
 
@@ -342,6 +319,10 @@ export default function HealthScreen() {
   const [pastStepCount, setPastStepCount] = useState<number>(0);
   const [completedGoalsToday, setCompletedGoalsToday] = useState<number>(0);
   const [totalGoalsCompleted, setTotalGoalsCompleted] = useState<number>(0);
+  const [editingGoal, setEditingGoal] = useState<string | null>(null);
+  const [editGoalTitle, setEditGoalTitle] = useState<string>('');
+  const [editGoalDescription, setEditGoalDescription] = useState<string>('');
+  const [goalEditModalVisible, setGoalEditModalVisible] = useState<boolean>(false);
 
   const [personalizedTips, setPersonalizedTips] = useState<any[]>(getDefaultHealthTips());
 
@@ -663,77 +644,79 @@ export default function HealthScreen() {
       
       // Add activity for significant updates
       if (increment > 0) {
-        const action: QuickAction = {
-          id: selectedMetric.id,
-          title: selectedMetric.label,
-          icon: selectedMetric.icon,
-          color: selectedMetric.color,
-          action: selectedMetric.id,
-          increment: increment
+        const activityData = {
+          ...createActivityImpact.healthActivity(),
+          categoryId: 'health',
+          title: `Updated ${selectedMetric.label}`,
+          impact: { health: 1 }
         };
-        handleQuickAction(action);
+        addActivity(activityData);
       }
     }
   };
 
 
 
-  const handleQuickAction = (action: QuickAction) => {
-    executeAction(action);
+  const openGoalEditModal = (goal: HealthGoal) => {
+    setEditingGoal(goal.id);
+    setEditGoalTitle(goal.title);
+    setEditGoalDescription(goal.description);
+    setGoalEditModalVisible(true);
   };
 
-  const executeAction = (action: QuickAction) => {
-    let activityData;
-    let metricUpdate = null;
+  const saveGoalEdit = () => {
+    if (!editingGoal) return;
     
-    switch (action.action) {
-      case 'meditation':
-        activityData = {
-          ...createActivityImpact.meditation(action.increment || 10),
-          categoryId: 'health',
-          title: `Meditation - ${action.increment} min`
+    setHealthGoals(prev => prev.map(goal => {
+      if (goal.id === editingGoal) {
+        return {
+          ...goal,
+          title: editGoalTitle.trim() || goal.title,
+          description: editGoalDescription.trim() || goal.description
         };
-        metricUpdate = { id: 'meditation', increment: action.increment || 10 };
-        break;
-      case 'water':
-        activityData = {
-          ...createActivityImpact.healthActivity(),
-          categoryId: 'health',
-          title: 'Drank water',
-          impact: { health: 1, energy: 1 }
-        };
-        metricUpdate = { id: 'water', increment: action.increment || 1 };
-        break;
-      case 'mood':
-        activityData = {
-          ...createActivityImpact.healthActivity(),
-          categoryId: 'health',
-          title: 'Logged mood',
-          impact: { health: 2, mindfulness: 1 }
-        };
-        break;
-      case 'meal':
-        activityData = {
-          ...createActivityImpact.healthActivity(),
-          categoryId: 'health',
-          title: 'Logged meal',
-          impact: { health: 2, energy: 1 }
-        };
-        break;
-      default:
-        activityData = {
-          type: 'health',
-          categoryId: 'health',
-          title: action.title,
-          impact: { health: 2 }
-        };
-    }
+      }
+      return goal;
+    }));
     
-    addActivity(activityData);
+    setGoalEditModalVisible(false);
+    setEditingGoal(null);
+    setEditGoalTitle('');
+    setEditGoalDescription('');
+  };
+
+  const deleteGoal = (goalId: string) => {
+    Alert.alert(
+      'Delete Goal',
+      'Are you sure you want to delete this goal?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            setHealthGoals(prev => prev.filter(goal => goal.id !== goalId));
+          }
+        }
+      ]
+    );
+  };
+
+  const addNewGoal = () => {
+    const newGoal: HealthGoal = {
+      id: `custom_${Date.now()}`,
+      title: 'New Health Goal',
+      description: 'Tap edit to customize this goal',
+      category: 'movement',
+      icon: Target,
+      color: '#3498DB',
+      completed: false,
+      streak: 0,
+      importance: 'medium',
+      timeOfDay: 'anytime'
+    };
     
-    if (metricUpdate) {
-      updateMetric(metricUpdate.id, metricUpdate.increment);
-    }
+    setHealthGoals(prev => [...prev, newGoal]);
+    openGoalEditModal(newGoal);
   };
   
   const renderMetricCard = (metric: HealthMetric, index: number) => {
@@ -800,23 +783,7 @@ export default function HealthScreen() {
     );
   };
 
-  const renderQuickAction = (action: QuickAction, index: number) => {
-    const IconComponent = action.icon;
-    
-    return (
-      <TouchableOpacity 
-        key={index} 
-        style={styles.quickActionCard} 
-        activeOpacity={0.7}
-        onPress={() => handleQuickAction(action)}
-      >
-        <View style={[styles.quickActionIcon, { backgroundColor: action.color }]}>
-          {React.createElement(IconComponent, { size: 20, color: 'white' })}
-        </View>
-        <Text style={styles.quickActionTitle}>{action.title}</Text>
-      </TouchableOpacity>
-    );
-  };
+
 
   const renderProgram = (program: any, index: number) => {
     const progressWidth = (width - 72) * (program.progress / 100);
@@ -921,25 +888,39 @@ export default function HealthScreen() {
 
         {/* Daily Health Goals */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's Health Goals</Text>
-          <Text style={styles.sectionSubtitle}>
-            Complete {Math.ceil(healthGoals.length * 0.6)} goals to maintain your streak
-          </Text>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>Today's Health Goals</Text>
+              <Text style={styles.sectionSubtitle}>
+                Complete {Math.ceil(healthGoals.length * 0.6)} goals to maintain your streak
+              </Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={addNewGoal}
+              activeOpacity={0.7}
+            >
+              <Plus size={20} color="#3498DB" />
+            </TouchableOpacity>
+          </View>
+          
           {healthGoals.map((goal, index) => {
             const IconComponent = goal.icon;
             const isCompleted = goal.completed;
             
             return (
-              <TouchableOpacity 
+              <View 
                 key={index}
                 style={[
                   styles.goalCard,
                   isCompleted && styles.goalCardCompleted
                 ]}
-                onPress={() => toggleGoalCompletion(goal.id)}
-                activeOpacity={0.8}
               >
-                <View style={styles.goalHeader}>
+                <TouchableOpacity 
+                  style={styles.goalHeader}
+                  onPress={() => toggleGoalCompletion(goal.id)}
+                  activeOpacity={0.8}
+                >
                   <View style={[styles.goalIcon, { backgroundColor: goal.color + '20' }]}>
                     {React.createElement(IconComponent, { size: 24, color: goal.color })}
                   </View>
@@ -993,15 +974,37 @@ export default function HealthScreen() {
                       <View style={styles.goalCheckboxEmpty} />
                     )}
                   </TouchableOpacity>
+                </TouchableOpacity>
+                
+                <View style={styles.goalActions}>
+                  <TouchableOpacity 
+                    style={styles.goalActionButton}
+                    onPress={() => openGoalEditModal(goal)}
+                    activeOpacity={0.7}
+                  >
+                    <Edit3 size={16} color="#3498DB" />
+                  </TouchableOpacity>
+                  
+                  {goal.id.startsWith('custom_') && (
+                    <TouchableOpacity 
+                      style={styles.goalActionButton}
+                      onPress={() => deleteGoal(goal.id)}
+                      activeOpacity={0.7}
+                    >
+                      <Trash2 size={16} color="#E74C3C" />
+                    </TouchableOpacity>
+                  )}
                 </View>
-              </TouchableOpacity>
+              </View>
             );
           })}
         </View>
 
         {/* Progress Summary */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's Progress</Text>
+          <View style={styles.sectionHeaderSimple}>
+            <Text style={styles.sectionTitle}>Today's Progress</Text>
+          </View>
           <View style={styles.progressSummaryCard}>
             <View style={styles.progressSummaryHeader}>
               <Text style={styles.progressSummaryTitle}>Goals Completed</Text>
@@ -1042,21 +1045,19 @@ export default function HealthScreen() {
 
         {/* Today's Metrics */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Health Metrics</Text>
+          <View style={styles.sectionHeaderSimple}>
+            <Text style={styles.sectionTitle}>Health Metrics</Text>
+          </View>
           {healthMetrics.map(renderMetricCard)}
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsGrid}>
-            {quickActions.map(renderQuickAction)}
-          </View>
-        </View>
+
 
         {/* Personalized Health Tips */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personalized Health Tips</Text>
+          <View style={styles.sectionHeaderSimple}>
+            <Text style={styles.sectionTitle}>Personalized Health Tips</Text>
+          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tipsScrollView}>
             {personalizedTips.map((tip, index) => {
               const IconComponent = tip.icon;
@@ -1075,13 +1076,17 @@ export default function HealthScreen() {
 
         {/* Programs */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Health Programs</Text>
+          <View style={styles.sectionHeaderSimple}>
+            <Text style={styles.sectionTitle}>Health Programs</Text>
+          </View>
           {healthPrograms.map(renderProgram)}
         </View>
 
         {/* Health Tools Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Health Tools</Text>
+          <View style={styles.sectionHeaderSimple}>
+            <Text style={styles.sectionTitle}>Health Tools</Text>
+          </View>
           <View style={styles.fitnessGrid}>
             <TouchableOpacity 
               style={styles.fitnessCard}
@@ -1230,6 +1235,72 @@ export default function HealthScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Goal Edit Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={goalEditModalVisible}
+        onRequestClose={() => setGoalEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Goal</Text>
+              <TouchableOpacity 
+                onPress={() => setGoalEditModalVisible(false)} 
+                style={styles.modalCloseButton}
+              >
+                <X size={24} color="#7F8C8D" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.modalBody}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Goal Title</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={editGoalTitle}
+                  onChangeText={setEditGoalTitle}
+                  placeholder="Enter goal title"
+                  placeholderTextColor="#95A5A6"
+                />
+              </View>
+              
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Description</Text>
+                <TextInput
+                  style={[styles.textInput, styles.textInputMultiline]}
+                  value={editGoalDescription}
+                  onChangeText={setEditGoalDescription}
+                  placeholder="Enter goal description"
+                  placeholderTextColor="#95A5A6"
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+              
+              <View style={styles.modalActions}>
+                <TouchableOpacity 
+                  style={[styles.modalActionButton, { backgroundColor: '#95A5A6' }]}
+                  onPress={() => setGoalEditModalVisible(false)}
+                >
+                  <X size={20} color="white" />
+                  <Text style={styles.modalActionText}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.modalActionButton, { backgroundColor: '#27AE60' }]}
+                  onPress={saveGoalEdit}
+                >
+                  <Save size={20} color="white" />
+                  <Text style={styles.modalActionText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -1285,7 +1356,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: 24,
     marginBottom: 16,
   },
@@ -1293,8 +1364,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#2C3E50',
-    paddingHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 4,
   },
   addButton: {
     width: 36,
@@ -1372,36 +1442,7 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3,
   },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 24,
-    justifyContent: 'space-between',
-  },
-  quickActionCard: {
-    width: (width - 60) / 4,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  quickActionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  quickActionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#2C3E50',
-    textAlign: 'center',
-  },
-  quickActionDescription: {
-    color: 'white',
-    fontSize: 12,
-    opacity: 0.9,
-  },
+
   playButton: {
     alignSelf: 'flex-end',
     width: 28,
@@ -1574,9 +1615,7 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 14,
     color: '#7F8C8D',
-    paddingHorizontal: 24,
-    marginBottom: 16,
-    marginTop: -8,
+    marginBottom: 8,
   },
   streakCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -2029,5 +2068,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#7F8C8D',
     marginTop: 4,
+  },
+  
+  // Goal editing styles
+  goalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E9ECEF',
+    gap: 12,
+  },
+  goalActionButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#F8F9FA',
+  },
+  
+  // Input styles for goal editing
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+    marginBottom: 8,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#2C3E50',
+    backgroundColor: '#F8F9FA',
+  },
+  textInputMultiline: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  
+  sectionHeaderSimple: {
+    paddingHorizontal: 24,
+    marginBottom: 16,
   },
 });
