@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Modal, Alert, Platform } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Dimensions, Modal, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,12 +16,10 @@ import {
   Utensils,
   X,
   Minus,
-  RotateCcw,
   TrendingUp,
   BarChart3,
   User,
-  Target,
-  Zap
+  Target
 } from 'lucide-react-native';
 import { useCategories, useCategoryData, createActivityImpact } from '@/contexts/CategoryContext';
 
@@ -63,10 +61,11 @@ const quickActions: QuickAction[] = [
 
 const healthPrograms = [
   {
-    title: 'Fitness Challenge',
-    description: '30-day transformation',
+    title: 'Daily Wellness',
+    description: 'Track your daily health habits',
     progress: 67,
-    color: '#4ECDC4'
+    color: '#4ECDC4',
+    route: '/health'
   },
   {
     title: 'Mindfulness Journey',
@@ -76,16 +75,11 @@ const healthPrograms = [
     route: '/mindfulness'
   },
   {
-    title: 'Nutrition Guide',
-    description: 'Healthy eating habits',
+    title: 'Activity History',
+    description: 'View your fitness progress',
     progress: 45,
-    color: '#27AE60'
-  },
-  {
-    title: 'Energy Optimization',
-    description: 'Boost your daily energy levels',
-    progress: 32,
-    color: '#FF6B6B'
+    color: '#27AE60',
+    route: '/fitness-history'
   }
 ];
 
@@ -248,22 +242,22 @@ const getDefaultHealthTips = () => [
 
 const weeklyGoals = [
   {
-    title: 'Exercise 4x this week',
-    current: 2,
-    target: 4,
+    title: 'Stay active daily',
+    current: 5,
+    target: 7,
     color: '#FF6B6B'
   },
   {
-    title: 'Meditate daily',
-    current: 5,
-    target: 7,
-    color: '#FFD93D'
-  },
-  {
-    title: 'Drink 8 glasses daily',
+    title: 'Drink enough water',
     current: 6,
     target: 7,
     color: '#4ECDC4'
+  },
+  {
+    title: 'Get quality sleep',
+    current: 4,
+    target: 7,
+    color: '#6C5CE7'
   }
 ];
 
@@ -277,7 +271,7 @@ export default function HealthScreen() {
   const [lastResetDate, setLastResetDate] = useState<string>('');
   const [isPedometerAvailable, setIsPedometerAvailable] = useState<boolean>(false);
   const [pastStepCount, setPastStepCount] = useState<number>(0);
-  const [currentStepCount, setCurrentStepCount] = useState<number>(0);
+
   const [personalizedTips, setPersonalizedTips] = useState<any[]>(getDefaultHealthTips());
 
   const loadHealthData = React.useCallback(async () => {
@@ -351,7 +345,6 @@ export default function HealthScreen() {
       
       // Reset step counters for new day
       setPastStepCount(0);
-      setCurrentStepCount(0);
       
       setLastResetDate(today);
     }
@@ -361,7 +354,6 @@ export default function HealthScreen() {
   useEffect(() => {
     loadHealthData();
     checkDailyReset();
-    initializePedometer();
     loadPersonalizedTips();
   }, [loadHealthData, checkDailyReset]);
   
@@ -412,7 +404,6 @@ export default function HealthScreen() {
           const pastStepCountResult = await Pedometer.getStepCountAsync(start, end);
           console.log('Past step count:', pastStepCountResult.steps);
           setPastStepCount(pastStepCountResult.steps);
-          setCurrentStepCount(pastStepCountResult.steps);
           
           // Update the steps metric with real data
           setHealthMetrics(prev => prev.map(metric => {
@@ -429,7 +420,6 @@ export default function HealthScreen() {
         const subscription = Pedometer.watchStepCount(result => {
           console.log('Step count update:', result.steps);
           const totalSteps = pastStepCount + result.steps;
-          setCurrentStepCount(totalSteps);
           
           setHealthMetrics(prev => prev.map(metric => {
             if (metric.id === 'steps') {
@@ -492,7 +482,7 @@ export default function HealthScreen() {
         cleanup();
       }
     };
-  }, [initializePedometer]);
+  }, []);
   
   const updateMetric = (metricId: string, increment: number) => {
     setHealthMetrics(prev => prev.map(metric => {
@@ -535,24 +525,7 @@ export default function HealthScreen() {
     }
   };
 
-  const resetDailyMetrics = () => {
-    Alert.alert(
-      'Reset Daily Metrics',
-      'Are you sure you want to reset all daily metrics? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: () => {
-            setHealthMetrics(getInitialHealthMetrics());
-            setDailyStreak(0);
-            setLastResetDate(new Date().toDateString());
-          }
-        }
-      ]
-    );
-  };
+
 
   const handleQuickAction = (action: QuickAction) => {
     executeAction(action);
@@ -792,11 +765,6 @@ export default function HealthScreen() {
               <Text style={styles.statValue}>{Math.round((healthMetrics.filter(m => m.actionable && m.value >= m.target).length / healthMetrics.filter(m => m.actionable).length) * 100) || 0}%</Text>
               <Text style={styles.statLabel}>Goals Met</Text>
             </View>
-            
-            <TouchableOpacity style={styles.resetButton} onPress={resetDailyMetrics}>
-              <RotateCcw size={16} color="#E74C3C" />
-              <Text style={styles.resetButtonText}>Reset</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -867,9 +835,9 @@ export default function HealthScreen() {
           {healthPrograms.map(renderProgram)}
         </View>
 
-        {/* Health Profile & Tips Section */}
+        {/* Health Tools Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Health Profile & Tips</Text>
+          <Text style={styles.sectionTitle}>Health Tools</Text>
           <View style={styles.fitnessGrid}>
             <TouchableOpacity 
               style={styles.fitnessCard}
@@ -894,23 +862,6 @@ export default function HealthScreen() {
               <User size={24} color="#4ECDC4" />
               <Text style={styles.fitnessCardTitle}>Health Profile</Text>
               <Text style={styles.fitnessCardDescription}>Get personalized tips</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.fitnessCard}
-              onPress={() => {
-                const energyActivity = {
-                  ...createActivityImpact.energyBoost(),
-                  categoryId: 'health',
-                  title: 'Energy boost activity'
-                };
-                addActivity(energyActivity);
-                Alert.alert('Energy Boost!', 'Great job taking care of your energy levels!');
-              }}
-            >
-              <Zap size={24} color="#00B894" />
-              <Text style={styles.fitnessCardTitle}>Energy Boost</Text>
-              <Text style={styles.fitnessCardDescription}>Quick energy tips</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1442,23 +1393,7 @@ const styles = StyleSheet.create({
     color: '#7F8C8D',
     marginTop: 2,
   },
-  resetButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 16,
-    padding: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  resetButtonText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#E74C3C',
-    marginTop: 2,
-  },
+
   weeklyGoalsContainer: {
     paddingHorizontal: 24,
   },
