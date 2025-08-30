@@ -31,9 +31,10 @@ export default function CreativityChatScreen() {
       <Stack.Screen 
         options={{ 
           title: "Creativity Coach",
-          headerStyle: { backgroundColor: '#E67E22' },
-          headerTintColor: 'white',
-          headerTitleStyle: { fontWeight: 'bold' }
+          headerStyle: { backgroundColor: '#FFFFFF' },
+          headerTintColor: '#000000',
+          headerTitleStyle: { fontWeight: '600' },
+          headerShadowVisible: false
         }} 
       />
       <AIChat
