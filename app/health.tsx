@@ -1010,7 +1010,7 @@ export default function HealthScreen() {
     checkDailyReset();
     loadPersonalizedTips();
     
-    // Show random quotes every 20 seconds for better reading time
+    // Show random quotes every 10 seconds for optimal reading time
     const getRandomQuote = () => {
       const randomIndex = Math.floor(Math.random() * healthQuotes.length);
       return healthQuotes[randomIndex];
@@ -1021,7 +1021,7 @@ export default function HealthScreen() {
     
     const quoteInterval = setInterval(() => {
       setCurrentQuote(getRandomQuote());
-    }, 20000);
+    }, 10000);
     
     return () => clearInterval(quoteInterval);
   }, [loadHealthData, checkDailyReset]);
