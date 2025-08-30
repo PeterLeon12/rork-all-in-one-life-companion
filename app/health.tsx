@@ -15,7 +15,6 @@ import {
   CheckCircle,
   Utensils,
   X,
-  Minus,
   TrendingUp,
   BarChart3,
   User,
@@ -131,8 +130,7 @@ const getInitialHealthGoals = (): HealthGoal[] => [
 ];
 
 const getInitialHealthMetrics = (): HealthMetric[] => [
-  { id: 'steps', label: 'Steps Today', value: 0, target: 8000, unit: 'steps', icon: Activity, color: '#FF6B6B', actionable: false },
-  { id: 'water', label: 'Water Intake', value: 0, target: 8, unit: 'glasses', icon: Droplets, color: '#4ECDC4', actionable: true }
+  { id: 'steps', label: 'Steps Today', value: 0, target: 8000, unit: 'steps', icon: Activity, color: '#FF6B6B', actionable: false }
 ];
 
 
@@ -608,15 +606,7 @@ export default function HealthScreen() {
     };
   }, [initializePedometer]);
   
-  const updateMetric = (metricId: string, increment: number) => {
-    setHealthMetrics(prev => prev.map(metric => {
-      if (metric.id === metricId) {
-        const newValue = Math.max(0, Math.min(metric.target * 1.5, metric.value + increment));
-        return { ...metric, value: newValue };
-      }
-      return metric;
-    }));
-  };
+
 
   const openMetricModal = (metric: HealthMetric) => {
     if (metric.actionable) {
@@ -630,22 +620,7 @@ export default function HealthScreen() {
     setSelectedMetric(null);
   };
 
-  const handleMetricUpdate = (increment: number) => {
-    if (selectedMetric) {
-      updateMetric(selectedMetric.id, increment);
-      
-      // Add activity for significant updates
-      if (increment > 0) {
-        const activityData = {
-          ...createActivityImpact.healthActivity(),
-          categoryId: 'health',
-          title: `Updated ${selectedMetric.label}`,
-          impact: { health: 1 }
-        };
-        addActivity(activityData);
-      }
-    }
-  };
+
 
 
 
@@ -1008,6 +983,117 @@ export default function HealthScreen() {
           {healthMetrics.map(renderMetricCard)}
         </View>
 
+        {/* Daily Achievement Report */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderSimple}>
+            <Text style={styles.sectionTitle}>Daily Achievement Report</Text>
+          </View>
+          <View style={styles.achievementReportCard}>
+            <View style={styles.achievementHeader}>
+              <View style={styles.achievementIconContainer}>
+                <BarChart3 size={24} color="#27AE60" />
+              </View>
+              <View style={styles.achievementInfo}>
+                <Text style={styles.achievementTitle}>Today&apos;s Performance</Text>
+                <Text style={styles.achievementSubtitle}>
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </Text>
+              </View>
+              <View style={styles.achievementScore}>
+                <Text style={styles.achievementScoreValue}>
+                  {Math.round((completedGoalsToday / healthGoals.length) * 100)}%
+                </Text>
+                <Text style={styles.achievementScoreLabel}>Complete</Text>
+              </View>
+            </View>
+            
+            <View style={styles.achievementStats}>
+              <View style={styles.achievementStatItem}>
+                <View style={[styles.achievementStatIcon, { backgroundColor: '#27AE60' + '20' }]}>
+                  <CheckCircle size={16} color="#27AE60" />
+                </View>
+                <Text style={styles.achievementStatValue}>{completedGoalsToday}</Text>
+                <Text style={styles.achievementStatLabel}>Goals Completed</Text>
+              </View>
+              
+              <View style={styles.achievementStatItem}>
+                <View style={[styles.achievementStatIcon, { backgroundColor: '#FF6B6B' + '20' }]}>
+                  <Target size={16} color="#FF6B6B" />
+                </View>
+                <Text style={styles.achievementStatValue}>{healthGoals.length - completedGoalsToday}</Text>
+                <Text style={styles.achievementStatLabel}>Goals Remaining</Text>
+              </View>
+              
+              <View style={styles.achievementStatItem}>
+                <View style={[styles.achievementStatIcon, { backgroundColor: '#FFD93D' + '20' }]}>
+                  <TrendingUp size={16} color="#FFD93D" />
+                </View>
+                <Text style={styles.achievementStatValue}>{dailyStreak}</Text>
+                <Text style={styles.achievementStatLabel}>Day Streak</Text>
+              </View>
+            </View>
+            
+            <View style={styles.achievementProgress}>
+              <View style={styles.achievementProgressHeader}>
+                <Text style={styles.achievementProgressTitle}>Goal Categories</Text>
+                <Text style={styles.achievementProgressSubtitle}>
+                  {completedGoalsToday}/{healthGoals.length} completed
+                </Text>
+              </View>
+              
+              <View style={styles.categoryProgressList}>
+                {['movement', 'nutrition', 'mindfulness', 'sleep', 'hydration'].map((category) => {
+                  const categoryGoals = healthGoals.filter(goal => goal.category === category);
+                  const completedCategoryGoals = categoryGoals.filter(goal => goal.completed);
+                  const categoryProgress = categoryGoals.length > 0 ? (completedCategoryGoals.length / categoryGoals.length) * 100 : 0;
+                  
+                  if (categoryGoals.length === 0) return null;
+                  
+                  const categoryColors: { [key: string]: string } = {
+                    movement: '#FF6B6B',
+                    nutrition: '#27AE60',
+                    mindfulness: '#FFD93D',
+                    sleep: '#6C5CE7',
+                    hydration: '#4ECDC4'
+                  };
+                  
+                  return (
+                    <View key={category} style={styles.categoryProgressItem}>
+                      <View style={styles.categoryProgressInfo}>
+                        <Text style={styles.categoryProgressName}>
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                        </Text>
+                        <Text style={styles.categoryProgressValue}>
+                          {completedCategoryGoals.length}/{categoryGoals.length}
+                        </Text>
+                      </View>
+                      <View style={styles.categoryProgressBarContainer}>
+                        <View style={styles.categoryProgressBar}>
+                          <View 
+                            style={[
+                              styles.categoryProgressBarFill,
+                              { 
+                                width: `${categoryProgress}%`,
+                                backgroundColor: categoryColors[category] || '#95A5A6'
+                              }
+                            ]}
+                          />
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+            
+            {completedGoalsToday === healthGoals.length && (
+              <View style={styles.perfectDayBanner}>
+                <Text style={styles.perfectDayText}>🎉 Perfect Day! All goals completed!</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
 
 
         {/* Personalized Health Tips */}
@@ -1104,81 +1190,13 @@ export default function HealthScreen() {
                   </Text>
                   
                   <View style={styles.modalActions}>
-                    {selectedMetric.id === 'water' && (
-                      <>
-                        <TouchableOpacity 
-                          style={[styles.modalActionButton, { backgroundColor: '#E74C3C' }]}
-                          onPress={() => handleMetricUpdate(-1)}
-                        >
-                          <Minus size={20} color="white" />
-                          <Text style={styles.modalActionText}>-1 Glass</Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity 
-                          style={[styles.modalActionButton, { backgroundColor: selectedMetric.color }]}
-                          onPress={() => handleMetricUpdate(1)}
-                        >
-                          <Plus size={20} color="white" />
-                          <Text style={styles.modalActionText}>+1 Glass</Text>
-                        </TouchableOpacity>
-                      </>
-                    )}
-                    
-                    {selectedMetric.id === 'meditation' && (
-                      <>
-                        <TouchableOpacity 
-                          style={[styles.modalActionButton, { backgroundColor: selectedMetric.color }]}
-                          onPress={() => handleMetricUpdate(5)}
-                        >
-                          <Plus size={20} color="white" />
-                          <Text style={styles.modalActionText}>+5 min</Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity 
-                          style={[styles.modalActionButton, { backgroundColor: selectedMetric.color }]}
-                          onPress={() => handleMetricUpdate(10)}
-                        >
-                          <Plus size={20} color="white" />
-                          <Text style={styles.modalActionText}>+10 min</Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity 
-                          style={[styles.modalActionButton, { backgroundColor: selectedMetric.color }]}
-                          onPress={() => handleMetricUpdate(20)}
-                        >
-                          <Plus size={20} color="white" />
-                          <Text style={styles.modalActionText}>+20 min</Text>
-                        </TouchableOpacity>
-                      </>
-                    )}
-                    
-                    {selectedMetric.id === 'sleep' && (
-                      <>
-                        <TouchableOpacity 
-                          style={[styles.modalActionButton, { backgroundColor: '#E74C3C' }]}
-                          onPress={() => handleMetricUpdate(-0.5)}
-                        >
-                          <Minus size={20} color="white" />
-                          <Text style={styles.modalActionText}>-30 min</Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity 
-                          style={[styles.modalActionButton, { backgroundColor: selectedMetric.color }]}
-                          onPress={() => handleMetricUpdate(0.5)}
-                        >
-                          <Plus size={20} color="white" />
-                          <Text style={styles.modalActionText}>+30 min</Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity 
-                          style={[styles.modalActionButton, { backgroundColor: selectedMetric.color }]}
-                          onPress={() => handleMetricUpdate(1)}
-                        >
-                          <Plus size={20} color="white" />
-                          <Text style={styles.modalActionText}>+1 hour</Text>
-                        </TouchableOpacity>
-                      </>
-                    )}
+                    <TouchableOpacity 
+                      style={[styles.modalActionButton, { backgroundColor: '#95A5A6' }]}
+                      onPress={closeModal}
+                    >
+                      <X size={20} color="white" />
+                      <Text style={styles.modalActionText}>Close</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               </>
@@ -2066,5 +2084,157 @@ const styles = StyleSheet.create({
   sectionHeaderSimple: {
     paddingHorizontal: 24,
     marginBottom: 16,
+  },
+  
+  // Achievement Report Styles
+  achievementReportCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    marginHorizontal: 24,
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  achievementHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  achievementIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#27AE60' + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  achievementInfo: {
+    flex: 1,
+  },
+  achievementTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  achievementSubtitle: {
+    fontSize: 14,
+    color: '#7F8C8D',
+  },
+  achievementScore: {
+    alignItems: 'center',
+  },
+  achievementScoreValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#27AE60',
+  },
+  achievementScoreLabel: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginTop: 2,
+  },
+  achievementStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 24,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  achievementStatItem: {
+    alignItems: 'center',
+  },
+  achievementStatIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  achievementStatValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+    marginBottom: 2,
+  },
+  achievementStatLabel: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    textAlign: 'center',
+  },
+  achievementProgress: {
+    marginTop: 8,
+  },
+  achievementProgressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  achievementProgressTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2C3E50',
+  },
+  achievementProgressSubtitle: {
+    fontSize: 14,
+    color: '#7F8C8D',
+  },
+  categoryProgressList: {
+    gap: 12,
+  },
+  categoryProgressItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryProgressInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  categoryProgressName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#2C3E50',
+  },
+  categoryProgressValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7F8C8D',
+  },
+  categoryProgressBarContainer: {
+    flex: 2,
+  },
+  categoryProgressBar: {
+    height: 6,
+    backgroundColor: '#E9ECEF',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  categoryProgressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  perfectDayBanner: {
+    backgroundColor: '#27AE60' + '20',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  perfectDayText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#27AE60',
+    textAlign: 'center',
   },
 });
